@@ -8,6 +8,9 @@ ENV PORT=3000
 COPY package.json bun.lock ./
 RUN bun install --frozen-lockfile --production
 
+COPY prisma ./prisma
+RUN bunx prisma generate
+
 COPY tsconfig.json ./
 COPY src ./src
 
