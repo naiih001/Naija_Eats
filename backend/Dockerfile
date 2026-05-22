@@ -8,6 +8,8 @@ ENV PORT=3000
 COPY package.json bun.lock ./
 RUN bun install --frozen-lockfile --production
 
+RUN apt-get update -y && apt-get install -y openssl libc6
+
 COPY prisma ./prisma
 RUN bunx prisma generate
 
