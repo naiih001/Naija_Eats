@@ -102,7 +102,7 @@ const SetBudget = () => {
     setIsSubmitting(true);
 
     try {
-      await preferencesService.savePreferences(getBudgetPayload());
+      await preferencesService.saveBudgetPreferences(getBudgetPayload());
       storeBudgetLocally();
       navigate("/onboarding/cooking-frequency");
     } catch (err) {

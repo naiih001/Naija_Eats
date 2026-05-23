@@ -18,6 +18,11 @@ export const authService = {
       localStorage.setItem("token", data.data.token);
       if (data.data.user) {
         localStorage.setItem("user", JSON.stringify(data.data.user));
+        if (data.data.user.onboarded === true) {
+          localStorage.setItem("onboarded", "true");
+        } else {
+          localStorage.removeItem("onboarded");
+        }
       }
     }
 

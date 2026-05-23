@@ -8,9 +8,7 @@ import { authService } from "../../services/auth.api";
 const SignIn = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const from =
-    location.state?.from ||
-    (localStorage.getItem("onboarded") ? "/" : "/onboarding/set-budget");
+  const from = location.state?.from;
 
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -35,9 +33,24 @@ const SignIn = () => {
     setError("");
 
     try {
-      await authService.signIn(formData.email, formData.password);
+      const signInResult = await authService.signIn(
+        formData.email,
+        formData.password,
+      );
 
-      navigate(from, { replace: true });
+      const userOnboarded = signInResult?.data?.user?.onboarded === true;
+
+      if (userOnboarded) {
+        localStorage.setItem("onboarded", "true");
+      } else {
+        localStorage.removeItem("onboarded");
+      }
+
+      const redirectPath = userOnboarded
+        ? from || "/"
+        : "/onboarding/set-budget";
+
+      navigate(redirectPath, { replace: true });
     } catch (err) {
       setError(
         err.message || "An error occurred during sign in. Please try again.",
@@ -183,7 +196,7 @@ const SignIn = () => {
               variant="outline"
               type="button"
               className="w-full"
-              onClick={() => navigate("/onboarding/welcome")}
+              onClick={() => navigate("/onboarding/set-budget")}
             >
               Continue as Guest
             </Button>

@@ -10,7 +10,9 @@ import { authService } from "../../services/auth.api";
 const SignUp = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const from = location.state?.from || (localStorage.getItem("onboarded") ? "/" : "/onboarding/welcome");
+  const from =
+    location.state?.from ||
+    (localStorage.getItem("onboarded") ? "/" : "/onboarding/welcome");
   const [showPassword, setShowPassword] = useState(false);
   const [isTerms, setTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);

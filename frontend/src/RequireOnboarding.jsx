@@ -10,7 +10,7 @@ export const RequireOnboarding = () => {
       return <LandingPage />;
     }
 
-    return <Navigate to="/onboarding/welcome" replace />;
+    return <Navigate to="/onboarding/set-budget" replace />;
   }
 
   return <Outlet />;

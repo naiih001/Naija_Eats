@@ -108,15 +108,15 @@ const GeneratingPlan = () => {
             <MealIcon className={"w-15 text-text-primary"} />
             <div className="flex gap-2 mt-1">
               <div
-                className="w-2.5 h-2.5 rounded-full bg-[#a36017] animate-bounce"
+                className="w-2.5 h-2.5 rounded-full bg-accent-orange animate-bounce"
                 style={{ animationDelay: "0ms" }}
               ></div>
               <div
-                className="w-2.5 h-2.5 rounded-full bg-[#a36017] animate-bounce"
+                className="w-2.5 h-2.5 rounded-full bg-accent-orange animate-bounce"
                 style={{ animationDelay: "150ms" }}
               ></div>
               <div
-                className="w-2.5 h-2.5 rounded-full bg-[#a36017] animate-bounce"
+                className="w-2.5 h-2.5 rounded-full bg-accent-orange animate-bounce"
                 style={{ animationDelay: "300ms" }}
               ></div>
             </div>
@@ -229,7 +229,7 @@ const GeneratingPlan = () => {
               </span>
             </div>
             <span
-              className={`text-[13px] font-semibold ${currentStep > 1 ? "text-gray-500" : "text-[#a36017]"}`}
+              className={`text-[13px] font-semibold ${currentStep > 1 ? "text-gray-500" : "text-accent-orange"}`}
             >
               {currentStep > 1 ? "Done" : "Active"}
             </span>
@@ -294,7 +294,7 @@ const GeneratingPlan = () => {
               </span>
             </div>
             <span
-              className={`text-[13px] font-semibold ${currentStep > 2 ? "text-gray-500" : currentStep === 2 ? "text-[#a36017]" : "text-gray-400"}`}
+              className={`text-[13px] font-semibold ${currentStep > 2 ? "text-gray-500" : currentStep === 2 ? "text-accent-orange" : "text-gray-400"}`}
             >
               {currentStep > 2
                 ? "Done"
@@ -363,7 +363,7 @@ const GeneratingPlan = () => {
               </span>
             </div>
             <span
-              className={`text-[13px] font-semibold ${currentStep > 3 ? "text-gray-500" : currentStep === 3 ? "text-[#a36017]" : "text-gray-400"}`}
+              className={`text-[13px] font-semibold ${currentStep > 3 ? "text-gray-500" : currentStep === 3 ? "text-accent-orange" : "text-gray-400"}`}
             >
               {currentStep > 3
                 ? "Done"

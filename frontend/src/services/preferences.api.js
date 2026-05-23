@@ -26,5 +26,5 @@ const postWithAuth = async (endpoint, body) => {
 };
 
 export const preferencesService = {
-  saveAllPreferences: (data) => postWithAuth("/preference", data),
+  saveAllPreferences: (data) => postWithAuth("/api/users/preferences/budget", data),
 };
