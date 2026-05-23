@@ -79,7 +79,7 @@ const GeneratingPlan = () => {
       } catch (err) {
         console.error("Failed to save preferences during onboarding:", err);
         setError(
-          "Sign in to genrate your meal plan",
+          "Sign in to generate your meal plan",
           // ||
           //   "Unable to save your preferences. Please check your connection and try again.",
         );
@@ -102,7 +102,7 @@ const GeneratingPlan = () => {
           <div className="absolute inset-0 rounded-full border-[5px] border-transparent border-t-[#c6d7bc] animate-[spin_2s_linear_infinite]"></div>
           <div className="absolute inset-3 rounded-full border-[3px] border-accent-orange/10"></div>
           <div className="absolute inset-3 rounded-full border-[3px] border-transparent border-r-accent-orange/40 animate-[spin_3s_linear_infinite_reverse]"></div>
-          <div className="absolute inset-[22px] rounded-full border border-accent-orange/20"></div>
+          <div className="absolute inset-5.5 rounded-full border border-accent-orange/20"></div>
           {/* // Center Content */}
           <div className="flex flex-col items-center gap-2 mt-2">
             <MealIcon className={"w-15 text-text-primary"} />

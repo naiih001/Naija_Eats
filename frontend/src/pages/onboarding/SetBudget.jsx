@@ -1,5 +1,5 @@
-/* eslint-disable react-hooks/set-state-in-effect */
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import OnboardingLayout from "../../components/layout/OnboardingLayout";
 import {
   WeeklyIcon,
@@ -7,36 +7,32 @@ import {
   ProInsightIcon,
   CircleAlertIcon,
 } from "../../constants/icons";
+import { preferencesService } from "../../services/preferences.api";
 
 const SetBudget = () => {
+  const navigate = useNavigate();
   const [budgetTier, setBudgetTier] = useState("Standard");
   const [frequency, setFrequency] = useState("Weekly");
   const [selectedBuffer, setSelectedBuffer] = useState("10%");
   const [customBuffer, setCustomBuffer] = useState("");
   const [budgetData, setBudgetData] = useState({
     budgetValue: "",
+    frequency: "",
+    selectedBuffer: "",
+    customBuffer: "",
+    budgetTier: "",
   });
-
-  useEffect(() => {
-    const saved = localStorage.getItem("onboarding_budget");
-    if (saved) {
-      const data = JSON.parse(saved);
-      if (data.amount) setBudgetData({ budgetValue: data.amount.toString() });
-      if (data.frequency)
-        setFrequency(data.frequency === "weekly" ? "Weekly" : "Monthly");
-      if (data.selectedBuffer) setSelectedBuffer(data.selectedBuffer);
-      if (data.customBuffer) setCustomBuffer(data.customBuffer);
-      if (data.budgetTier) setBudgetTier(data.budgetTier);
-    }
-  }, []);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  const [showHint, setShowHint] = useState(false);
 
   const getBudgetValuePlaceholder = (tier, freq) => {
     if (freq === "Weekly") {
-      if (tier === "Low cost") return "4,500 - 7,000";
+      if (tier === "Low") return "4,500 - 7,000";
       if (tier === "Standard") return "7,000 - 10,000";
       if (tier === "Premium") return "10,000 - 15,000";
     } else {
-      if (tier === "Low cost") return "30,000 - 50,000";
+      if (tier === "Low") return "30,000 - 50,000";
       if (tier === "Standard") return "50,000 - 70,000";
       if (tier === "Premium") return "70,000 - 100,000";
     }
@@ -48,9 +44,12 @@ const SetBudget = () => {
 
   const handleInputChange = (e) => {
     const { value } = e.target;
-    const numValue = parseInt(value) || 0;
+    const numValue = parseInt(value, 10) || 0;
 
-    setBudgetData({ budgetValue: value });
+    setBudgetData((prev) => ({
+      ...prev,
+      budgetValue: value,
+    }));
 
     // Automatically highlight tier based on value
     if (frequency === "Weekly") {
@@ -64,30 +63,54 @@ const SetBudget = () => {
     }
   };
 
-  // const handleSubmitBudget =async (e) => {
-  //     e.preventDefault();
-  //     setError("");
-
-  //     try {
-  //       await (budgetData);
-
-  //     } catch (err) {
-  //       setError(
-  //         err.message || "An error occurred during sign in. Please try again.",
-  //       );
-  //     }     };
-  const tiers = ["Low cost", "Standard", "Premium"];
+  const tiers = ["Low", "Standard", "Premium"];
   const bufferOptions = ["10%", "15%", "20%", "Custom"];
 
-  const saveData = () => {
-    const data = {
-      amount: parseInt(budgetData.budgetValue) || 0,
-      frequency: frequency.toLowerCase(),
-      selectedBuffer: selectedBuffer,
-      customBuffer: selectedBuffer === "Custom" ? customBuffer : null,
-      budgetTier: budgetTier,
-    };
-    localStorage.setItem("onboarding_budget", JSON.stringify(data));
+  const getBudgetPayload = () => ({
+    budgetTier,
+    budgetValue: budgetData.budgetValue,
+    frequency,
+    fluctuationBuffer:
+      selectedBuffer === "Custom"
+        ? customBuffer
+          ? `${customBuffer}%`
+          : null
+        : selectedBuffer,
+  });
+
+  const storeBudgetLocally = () => {
+    localStorage.setItem(
+      "onboarding_budget",
+      JSON.stringify({
+        amount: parseInt(budgetData.budgetValue, 10) || 0,
+        frequency: frequency.toLowerCase(),
+        selectedBuffer,
+        customBuffer,
+        budgetTier,
+        budgetValue: budgetData.budgetValue,
+      }),
+    );
+  };
+
+  const handleBudgetSubmit = async () => {
+    setError("");
+    if (!budgetData.budgetValue) {
+      setError("Please enter a budget before continuing.");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      await preferencesService.savePreferences(getBudgetPayload());
+      storeBudgetLocally();
+      navigate("/onboarding/cooking-frequency");
+    } catch (err) {
+      console.log(err?.message || err);
+      setError("Unable to save budget preferences.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -96,9 +119,9 @@ const SetBudget = () => {
       totalSteps={3}
       label="Budget & Buffer"
       prevTo="/"
-      nextTo="/onboarding/cooking-frequency"
+      onNext={handleBudgetSubmit}
+      nextButtonDisabled={isSubmitting}
       nextLabel="Set Frequency"
-      submitFunction={saveData}
     >
       <h1 className="text-subheading tracking-tight font-bold leading-tight mb-2">
         Set your weekly budget
@@ -106,6 +129,7 @@ const SetBudget = () => {
       <p className="text-base text-text-primary font-inter mb-2">
         We'll tailor meal plans that fit your wallet.
       </p>
+
       <span className="text-sm font-bold text-inter uppercase tracking-wider">
         Frequency
       </span>
@@ -173,12 +197,24 @@ const SetBudget = () => {
           Fluctuation Buffer
         </span>
         <div className="relative group">
-          <CircleAlertIcon
-            className={
-              "text-xs cursor-help text-text-muted hover:text-accent-orange transition-colors"
-            }
-          />
-          <div className="absolute bottom-full left-1/2 mb-2 w-64 p-3 bg-text-primary text-white text-[11px] -translate-x-1/2 rounded-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50 shadow-xl pointer-events-none">
+          <button
+            type="button"
+            onClick={() => setShowHint((prev) => !prev)}
+            className="inline-flex items-center"
+          >
+            <CircleAlertIcon
+              className={
+                "text-xs cursor-help text-text-muted hover:text-accent-orange transition-colors"
+              }
+            />
+          </button>
+          <div
+            className={`absolute bottom-full left-1/2 mb-2 w-64 p-3 bg-text-primary text-white text-[11px] -translate-x-1/2 rounded-xl transition-all duration-300 z-50 shadow-xl pointer-events-none ${
+              showHint
+                ? "opacity-100 visible"
+                : "opacity-0 invisible group-hover:opacity-100 group-hover:visible"
+            }`}
+          >
             <p className="font-bold mb-1">Why a buffer?</p>
             Food prices and delivery fees in Nigeria can fluctuate due to peak
             hours, weather, or market changes. This buffer ensures your plan
@@ -208,7 +244,7 @@ const SetBudget = () => {
           <label className="block text-xs font-bold font-inter uppercase tracking-wider mb-2 text-text-muted">
             Enter custom percentage
           </label>
-          <div className="relative max-w-[150px]">
+          <div className="relative max-w-37.5">
             <input
               type="number"
               value={customBuffer}
@@ -225,9 +261,9 @@ const SetBudget = () => {
       )}
 
       {/* Pro Insight Card */}
-      <div className="bg-text-muted/10 rounded-[8px] py-3 px-5 flex gap-4 items-start overflow-hidden relative">
+      <div className="bg-text-muted/10 rounded-lg py-3 px-5 flex gap-4 items-start overflow-hidden relative">
         <div className="w-1 h-full bg-accent-orange absolute top-0 left-0"></div>
-        <span className="w-8 h-8 grid place-items-center rounded-[4px] my-auto bg-accent-orange/20 p-1">
+        <span className="w-8 h-8 grid place-items-center rounded-sm my-auto bg-accent-orange/20 p-1">
           <ProInsightIcon className="text-accent-orange" />
         </span>
         <div>
@@ -238,6 +274,11 @@ const SetBudget = () => {
           </p>
         </div>
       </div>
+      {error && (
+        <div className="mt-3 rounded-xl bg-red-50 border border-red-100 px-4 py-3 text-sm text-red-700">
+          {error}
+        </div>
+      )}
     </OnboardingLayout>
   );
 };

@@ -15,6 +15,7 @@ const OnboardingLayout = ({
   nextTo,
   nextLabel = "Set Daily Rhythm",
   onNext,
+  nextButtonDisabled = false,
   children,
   submitFunction,
 }) => {
@@ -39,7 +40,7 @@ const OnboardingLayout = ({
         />
 
         {/* Sidebar - Desktop Only */}
-        <div className="hidden lg:flex w-full lg:w-[300px] flex-col p-12 border-r border-text-muted/10 relative z-20">
+        <div className="hidden lg:flex w-full lg:w-75 flex-col p-12 border-r border-text-muted/10 relative z-20">
           <div className="mb-12">
             <div className="flex flex-col gap-8">
               {STEPS.map((s) => {
@@ -142,7 +143,7 @@ const OnboardingLayout = ({
                 <Button
                   variant="outline"
                   to={prevTo}
-                  className="py-4 px-10 text-sm font-bold min-w-[120px]"
+                  className="py-4 px-10 text-sm font-bold min-w-30"
                 >
                   Previous
                 </Button>
@@ -154,7 +155,8 @@ const OnboardingLayout = ({
                 <Button
                   variant="primary"
                   onClick={onNext}
-                  className="py-4 px-10 text-sm font-bold min-w-[160px]"
+                  disabled={nextButtonDisabled}
+                  className="py-4 px-10 text-sm font-bold min-w-40"
                 >
                   {nextLabel} <span className="ml-2">→</span>
                 </Button>
@@ -163,7 +165,8 @@ const OnboardingLayout = ({
                   variant="primary"
                   to={nextTo}
                   onClick={submitFunction}
-                  className="py-4 px-10 text-sm font-bold min-w-[160px]"
+                  disabled={nextButtonDisabled}
+                  className="py-4 px-10 text-sm font-bold min-w-40"
                 >
                   {nextLabel} <span className="ml-2">→</span>
                 </Button>

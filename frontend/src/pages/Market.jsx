@@ -1,11 +1,27 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { SearchIcon, ShoppingCartIcon } from "../constants/icons";
 import { MarketData } from "../constants/market";
+import { useBudgetAlert } from "../context/useBudgetAlert";
 
 const Market = () => {
   const [marketData, setMarketData] = useState(MarketData);
   const [activeFilter, setActiveFilter] = useState("Today's Meals");
   const [searchTerm, setSearchTerm] = useState("");
+  const { setShoppingListTotal } = useBudgetAlert();
+
+  // Calculate and update shopping list total
+  useEffect(() => {
+    const total = marketData.reduce((sum, category) => {
+      return (
+        sum +
+        category.items.reduce((catSum, item) => {
+          // Assuming each item has a price property; adjust based on your data structure
+          return catSum + (item.price || 0);
+        }, 0)
+      );
+    }, 0);
+    setShoppingListTotal(total);
+  }, [marketData, setShoppingListTotal]);
 
   const handleSearch = (e) => {
     setSearchTerm(e.target.value);

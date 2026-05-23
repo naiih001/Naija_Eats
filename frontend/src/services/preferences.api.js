@@ -21,10 +21,13 @@ export const preferencesService = {
       });
 
       const data = await response.json();
+      
+
 
       if (!response.ok) {
         console.error("Preferences API Error Response:", data);
         throw new Error(data.message || "Failed to save preferences");
+
       }
 
       console.log("Preferences saved successfully:", data);

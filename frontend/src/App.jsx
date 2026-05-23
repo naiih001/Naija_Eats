@@ -18,6 +18,7 @@ import MenuPage from "./pages/MenuPage";
 import Profile from "./pages/Profile";
 import MealDetail from "./pages/MealDetail";
 import SplashScreen from "./pages/onboarding/SplashScreen";
+import { BudgetAlertProvider } from "./context/BudgetAlertContext";
 
 import { useState, useEffect } from "react";
 
@@ -36,7 +37,7 @@ function App() {
   }
 
   return (
-    <>
+    <BudgetAlertProvider>
       <Routes>
         <Route
           path="/onboarding"
@@ -102,12 +103,9 @@ function App() {
           element={<GeneratingPlan />}
         />
         <Route path="/onboarding/meal-plan" element={<MealPlan />} />
-        <Route
-          path="*"
-          element={<Navigate to="/onboarding/welcome" replace />}
-        />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </>
+    </BudgetAlertProvider>
   );
 }
 
