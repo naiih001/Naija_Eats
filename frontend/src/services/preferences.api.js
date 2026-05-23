@@ -16,6 +16,7 @@ const postWithAuth = async (endpoint, body) => {
     body: JSON.stringify(body),
   });
 
+  console.log("Body sent to", endpoint, ":", body);
   const data = await response.json();
 
   if (!response.ok) {
@@ -26,5 +27,9 @@ const postWithAuth = async (endpoint, body) => {
 };
 
 export const preferencesService = {
-  saveAllPreferences: (data) => postWithAuth("/api/users/preferences/budget", data),
+  saveBudgetPreferences: (data) => postWithAuth("/api/users/preferences/budget", data),
+  saveCookingFrequency: (data) => postWithAuth("/api/users/preferences/cooking-frequency", data),
+  saveFoodPreferences: (data) => postWithAuth("/api/users/preferences/food", data),
+  generateMealPlans: () => postWithAuth("/api/meal-plans/generate"),
+
 };

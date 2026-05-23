@@ -54,7 +54,7 @@ const GeneratingPlan = () => {
           allergies: preferencesData.allergies || [],
         };
 
-        await preferencesService.savePreferences(payload);
+        await preferencesService.generateMealPlans(payload);
 
         // to clean up all the stored items in user's localStorage
         localStorage.removeItem("onboarding_budget");

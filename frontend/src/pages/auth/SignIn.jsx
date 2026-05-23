@@ -33,28 +33,17 @@ const SignIn = () => {
     setError("");
 
     try {
-      const signInResult = await authService.signIn(
-        formData.email,
-        formData.password,
-      );
+      await authService.signIn(formData.email, formData.password);
+      const isOnboarded = localStorage.getItem("onboarded") === "true";
 
-      const userOnboarded = signInResult?.data?.user?.onboarded === true;
-
-      if (userOnboarded) {
-        localStorage.setItem("onboarded", "true");
-      } else {
-        localStorage.removeItem("onboarded");
-      }
-
-      const redirectPath = userOnboarded
+      const redirectPath = isOnboarded
         ? from || "/"
         : "/onboarding/set-budget";
 
       navigate(redirectPath, { replace: true });
     } catch (err) {
-      setError(
-        err.message || "An error occurred during sign in. Please try again.",
-      );
+      console.error(err);
+      setError("Email doesn't exist. Please sign up for a new account.");
     } finally {
       setIsLoading(false);
     }

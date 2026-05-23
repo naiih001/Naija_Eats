@@ -1,4 +1,5 @@
-import { useState } from "react";
+/* eslint-disable no-unused-vars */
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import OnboardingLayout from "../../components/layout/OnboardingLayout";
 import {
@@ -8,6 +9,7 @@ import {
   CircleAlertIcon,
 } from "../../constants/icons";
 import { preferencesService } from "../../services/preferences.api";
+// import { preferencesService } from "../../services/preferences.api";
 
 const SetBudget = () => {
   const navigate = useNavigate();
@@ -107,7 +109,7 @@ const SetBudget = () => {
       navigate("/onboarding/cooking-frequency");
     } catch (err) {
       console.log(err?.message || err);
-      setError("Unable to save budget preferences.");
+      setError("Couldn't save your budget. Please try again.");
     } finally {
       setIsSubmitting(false);
     }

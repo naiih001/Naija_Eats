@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import OnboardingLayout from "../../components/layout/OnboardingLayout";
 import { GroupIcon, SweetTooth } from "../../constants/icons";
 import CustomRadio from "../../components/ui/CustomRadio";
+import { preferencesService } from "../../services/preferences.api";
 
 const HOUSEHOLD_OPTIONS = [
   { value: "1", label: "SOLO", number: "1" },
@@ -39,7 +40,7 @@ const CookingFrequency = () => {
     setSelectedFrequencies([option]);
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     setError("");
 
     if (selectedFrequencies.length === 0) {
@@ -47,18 +48,36 @@ const CookingFrequency = () => {
       return;
     }
 
-    // save to localStorage — API call happens at the end in FoodPreferences
-    localStorage.setItem(
-      "onboarding_frequency",
-      JSON.stringify({
-        household_size: parseInt(householdSize),
-        daily_meals: parseInt(dailyMeals),
-        is_dessert: includeDesserts,
-        cooking_frequency: FREQUENCY_MAP[selectedFrequencies[0]] || "daily",
-      }),
-    );
+    const getFrequencyPayload = () => ({
+      household_size: parseInt(householdSize),
+      daily_meals: parseInt(dailyMeals),
+      is_dessert: includeDesserts,
+      cooking_frequency: FREQUENCY_MAP[selectedFrequencies[0]] || "daily",
+    });
 
-    navigate("/onboarding/food-preferences");
+    // save to localStorage — API call happens at the end in FoodPreferences
+    const storeFrequencyLocally = () => {
+      localStorage.setItem(
+        "onboarding_frequency",
+        JSON.stringify({
+          household_size: parseInt(householdSize),
+          daily_meals: parseInt(dailyMeals),
+          is_dessert: includeDesserts,
+          cooking_frequency: FREQUENCY_MAP[selectedFrequencies[0]] || "daily",
+        }),
+      );
+    };
+
+    try {
+      await preferencesService.saveCookingFrequency(getFrequencyPayload());
+      storeFrequencyLocally();
+      navigate("/onboarding/food-preferences");
+    } catch (err) {
+      console.log(
+        err?.message || "An error occurred while saving preferences.",
+      );
+      setError("Couldn't save your cooking frequency. Please try again.");
+    }
   };
 
   return (
@@ -77,12 +96,6 @@ const CookingFrequency = () => {
         Tell us how you'd like to experience your meals so we can tailor the
         perfect plan for your household.
       </p>
-
-      {error && (
-        <div className="mb-4 rounded-xl bg-red-50 border border-red-100 px-4 py-3 text-sm text-red-700">
-          {error}
-        </div>
-      )}
 
       <div className="flex flex-col lg:grid lg:grid-cols-2 gap-4">
         {/* household size */}
@@ -186,6 +199,11 @@ const CookingFrequency = () => {
           </ul>
         </div>
       </div>
+      {error && (
+        <div className="mt-4 rounded-xl bg-red-50 border border-red-100 px-4 py-3 text-sm text-red-700">
+          {error}
+        </div>
+      )}
     </OnboardingLayout>
   );
 };

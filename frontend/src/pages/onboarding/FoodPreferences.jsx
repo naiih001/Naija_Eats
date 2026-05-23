@@ -46,31 +46,8 @@ const FoodPreferences = () => {
 
     setIsSubmitting(true);
 
-    // collect data saved from previous steps
-    const budgetData = JSON.parse(
-      localStorage.getItem("onboarding_budget") || "{}",
-    );
-    const frequencyData = JSON.parse(
-      localStorage.getItem("onboarding_frequency") || "{}",
-    );
-
     // build the single payload the backend expects
     const payload = {
-      // from SetBudget
-      amount: parseInt(budgetData.budgetValue) || 0,
-      frequency: (budgetData.frequency || "weekly").toLowerCase(),
-      fluctuation_buffer:
-        budgetData.selectedBuffer === "Custom"
-          ? `${budgetData.customBuffer}%`
-          : budgetData.selectedBuffer || "10%",
-
-      // from CookingFrequency
-      household_size: frequencyData.household_size || 1,
-      daily_meals: frequencyData.daily_meals || 1,
-      is_dessert: frequencyData.is_dessert || false,
-      cooking_frequency: frequencyData.cooking_frequency || "daily",
-
-      // from this step
       preferences: selectedPrefs.map((id) => Preferences[id].category),
       allergies: allergyInput.trim()
         ? allergyInput
@@ -81,16 +58,19 @@ const FoodPreferences = () => {
     };
 
     try {
-      await preferencesService.saveAllPreferences(payload);
+      await preferencesService.saveFoodPreferences(payload);
 
       // clean up localStorage after successful save
       localStorage.removeItem("onboarding_budget");
       localStorage.removeItem("onboarding_frequency");
-      localStorage.setItem("onboarding_complete", "true");
+      localStorage.setItem("onboarded", "true");
 
       navigate("/onboarding/generating-plan");
     } catch (err) {
-      setError(err.message || "Unable to save preferences. Please try again.");
+      console.error(
+        err?.message || "An error occurred while saving preferences.",
+      );
+      setError("Unable to save your preferences. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -104,7 +84,7 @@ const FoodPreferences = () => {
       prevTo="/onboarding/cooking-frequency"
       onNext={handleNext}
       nextButtonDisabled={isSubmitting}
-      nextLabel={isSubmitting ? "Saving..." : "Generate Your Plan"}
+      nextLabel={isSubmitting ? "Saving..." : "Generate Plan"}
     >
       <h1 className="text-[28px] font-bold leading-tight mb-2">
         What do you enjoy eating?
@@ -112,12 +92,6 @@ const FoodPreferences = () => {
       <p className="text-sm text-body mb-6">
         Tell your flavour so we can help curate the best experience for you!
       </p>
-
-      {error && (
-        <div className="mb-4 rounded-xl bg-red-50 border border-red-100 px-4 py-3 text-sm text-red-700">
-          {error}
-        </div>
-      )}
 
       {/* food category grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
@@ -209,6 +183,11 @@ const FoodPreferences = () => {
           ))}
         </div>
       </div>
+      {error && (
+        <div className="mt-4 rounded-xl bg-red-50 border border-red-100 px-4 py-3 text-sm text-red-700">
+          {error}
+        </div>
+      )}
     </OnboardingLayout>
   );
 };

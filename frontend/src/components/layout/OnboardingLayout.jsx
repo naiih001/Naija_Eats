@@ -158,7 +158,8 @@ const OnboardingLayout = ({
                   disabled={nextButtonDisabled}
                   className="py-4 px-10 text-sm font-bold min-w-40"
                 >
-                  {nextLabel} <span className="ml-2">→</span>
+                  {nextLabel}
+                  {/* <span className="ml-2">→</span> */}
                 </Button>
               ) : nextTo ? (
                 <Button
@@ -168,7 +169,7 @@ const OnboardingLayout = ({
                   disabled={nextButtonDisabled}
                   className="py-4 px-10 text-sm font-bold min-w-40"
                 >
-                  {nextLabel} <span className="ml-2">→</span>
+                  {nextLabel}
                 </Button>
               ) : null}
             </div>
