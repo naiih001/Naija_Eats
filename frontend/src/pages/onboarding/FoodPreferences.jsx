@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import OnboardingLayout from "../../components/layout/OnboardingLayout";
+import { toast } from "sonner";
 import {
   RhombusAlertIcon,
   CircleAlertIcon,
@@ -22,7 +23,6 @@ const FoodPreferences = () => {
   const [allergyInput, setAllergyInput] = useState("");
   const [dietaryTags, setDietaryTags] = useState(DEFAULT_DIETARY_TAGS);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState("");
 
   const handleTogglePref = (id) => {
     setSelectedPrefs((prev) =>
@@ -37,10 +37,8 @@ const FoodPreferences = () => {
   };
 
   const handleNext = async () => {
-    setError("");
-
     if (selectedPrefs.length === 0) {
-      setError("Please select at least one food preference.");
+      toast.error("Please select at least one food preference.");
       return;
     }
 
@@ -48,17 +46,23 @@ const FoodPreferences = () => {
 
     // build the single payload the backend expects
     const payload = {
-      preferences: selectedPrefs.map((id) => Preferences[id].category),
+      selectedPreferences: selectedPrefs.map((id) => Preferences[id].category),
       allergies: allergyInput.trim()
         ? allergyInput
             .split(",")
             .map((a) => a.trim())
             .filter(Boolean)
-        : [],
+            .join(", ")
+        : "",
+      dietaryTags: dietaryTags
+        .filter((tag) => tag.active)
+        .map((tag) => tag.label),
     };
 
     try {
       await preferencesService.saveFoodPreferences(payload);
+
+      toast.success("Your food preferences were saved successfully.");
 
       // clean up localStorage after successful save
       localStorage.removeItem("onboarding_budget");
@@ -70,7 +74,7 @@ const FoodPreferences = () => {
       console.error(
         err?.message || "An error occurred while saving preferences.",
       );
-      setError("Unable to save your preferences. Please try again.");
+      toast.error("We couldn't save your food preferences. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -183,11 +187,6 @@ const FoodPreferences = () => {
           ))}
         </div>
       </div>
-      {error && (
-        <div className="mt-4 rounded-xl bg-red-50 border border-red-100 px-4 py-3 text-sm text-red-700">
-          {error}
-        </div>
-      )}
     </OnboardingLayout>
   );
 };

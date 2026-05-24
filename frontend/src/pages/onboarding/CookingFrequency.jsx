@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import OnboardingLayout from "../../components/layout/OnboardingLayout";
+import { toast } from "sonner";
 import { GroupIcon, SweetTooth } from "../../constants/icons";
 import CustomRadio from "../../components/ui/CustomRadio";
 import { preferencesService } from "../../services/preferences.api";
@@ -34,17 +35,14 @@ const CookingFrequency = () => {
   const [dailyMeals, setDailyMeals] = useState("1");
   const [includeDesserts, setIncludeDesserts] = useState(false);
   const [selectedFrequencies, setSelectedFrequencies] = useState([]);
-  const [error, setError] = useState("");
 
   const handleFrequencySelect = (option) => {
     setSelectedFrequencies([option]);
   };
 
   const handleNext = async () => {
-    setError("");
-
     if (selectedFrequencies.length === 0) {
-      setError("Please select how often you cook.");
+      toast.error("Please tell us how often you cook.");
       return;
     }
 
@@ -71,12 +69,13 @@ const CookingFrequency = () => {
     try {
       await preferencesService.saveCookingFrequency(getFrequencyPayload());
       storeFrequencyLocally();
+      toast.success("Cooking frequency saved successfully.");
       navigate("/onboarding/food-preferences");
     } catch (err) {
       console.log(
         err?.message || "An error occurred while saving preferences.",
       );
-      setError("Couldn't save your cooking frequency. Please try again.");
+      toast.error("We couldn't save your cooking frequency. Please try again.");
     }
   };
 
@@ -199,11 +198,6 @@ const CookingFrequency = () => {
           </ul>
         </div>
       </div>
-      {error && (
-        <div className="mt-4 rounded-xl bg-red-50 border border-red-100 px-4 py-3 text-sm text-red-700">
-          {error}
-        </div>
-      )}
     </OnboardingLayout>
   );
 };

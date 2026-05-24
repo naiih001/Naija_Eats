@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { MealIcon } from "../../constants/icons";
 import { preferencesService } from "../../services/preferences.api";
 import Button from "../../components/ui/Button";
 
 const GeneratingPlan = () => {
   const [currentStep, setCurrentStep] = useState(1);
-  const [error, setError] = useState(null);
+  const [hasError, setHasError] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -78,11 +79,11 @@ const GeneratingPlan = () => {
         };
       } catch (err) {
         console.error("Failed to save preferences during onboarding:", err);
-        setError(
-          "Sign in to generate your meal plan",
-          // ||
-          //   "Unable to save your preferences. Please check your connection and try again.",
+        toast.error(
+          "We couldn't generate your meal plan. Please sign in or try again.",
         );
+        
+        setHasError(true);
       }
     };
 
@@ -146,7 +147,7 @@ const GeneratingPlan = () => {
         </div>
       </>
 
-      {error ? (
+      {hasError ? (
         <div className="w-full p-6 bg-red-50 border border-red-100 rounded-2xl flex flex-col items-center gap-4 animate-in fade-in zoom-in duration-300">
           <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center text-red-600">
             <svg
@@ -164,7 +165,9 @@ const GeneratingPlan = () => {
               <line x1="12" y1="16" x2="12.01" y2="16" />
             </svg>
           </div>
-          <p className="text-sm font-bold text-red-800 text-center">{error}</p>
+          <p className="text-sm font-bold text-red-800 text-center">
+            We couldn't generate your meal plan. Please try again or sign in.
+          </p>
           <Button
             onClick={() =>
               navigate("/sign-in", {

@@ -28,7 +28,7 @@ const postWithAuth = async (endpoint, body) => {
 
 export const preferencesService = {
   saveBudgetPreferences: (data) => postWithAuth("/api/users/preferences/budget", data),
-  saveCookingFrequency: (data) => postWithAuth("/api/users/preferences/cooking-frequency", data),
+  saveCookingFrequency: (data) => postWithAuth("/api/users/preferences/frequency", data),
   saveFoodPreferences: (data) => postWithAuth("/api/users/preferences/food", data),
   generateMealPlans: () => postWithAuth("/api/meal-plans/generate"),
 

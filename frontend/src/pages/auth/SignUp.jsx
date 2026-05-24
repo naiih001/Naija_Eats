@@ -6,6 +6,7 @@ import Button from "../../components/ui/Button";
 import { AppleIcon, GoogleIcon } from "../../constants/icons";
 import Footer from "../../components/ui/Footer";
 import { authService } from "../../services/auth.api";
+import { toast } from "sonner";
 
 const SignUp = () => {
   const navigate = useNavigate();
@@ -16,7 +17,6 @@ const SignUp = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isTerms, setTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
 
   const [formData, setFormData] = useState({
     full_name: "",
@@ -40,12 +40,11 @@ const SignUp = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!isTerms) {
-      setError("Please agree to the Terms of Service and Privacy Policy.");
+      toast.error("Please agree to the Terms of Service and Privacy Policy.");
       return;
     }
 
     setIsLoading(true);
-    setError("");
 
     try {
       const payload = {
@@ -53,10 +52,11 @@ const SignUp = () => {
         phone_number: `+234${formData.phone_number}`,
       };
       await authService.signUp(payload);
+      toast.success("Account created successfully!");
       navigate("/onboarding/set-budget");
     } catch (err) {
-      setError(
-        err.message || "An error occurred during sign up. Please try again.",
+      toast.error(
+        "Something went wrong while creating your account. Please try again.",
       );
       console.error("Error", err);
     } finally {
@@ -226,11 +226,11 @@ const SignUp = () => {
                 .
               </label>
             </div>
-            {error && (
+            {/* {error && (
               <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm font-medium">
                 {error}
               </div>
-            )}
+            )} */}
 
             <Button
               variant="primary"

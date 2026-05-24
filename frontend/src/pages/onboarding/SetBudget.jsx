@@ -1,5 +1,6 @@
 /* eslint-disable no-unused-vars */
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import OnboardingLayout from "../../components/layout/OnboardingLayout";
 import {
@@ -25,7 +26,6 @@ const SetBudget = () => {
     budgetTier: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState("");
   const [showHint, setShowHint] = useState(false);
 
   const getBudgetValuePlaceholder = (tier, freq) => {
@@ -95,9 +95,8 @@ const SetBudget = () => {
   };
 
   const handleBudgetSubmit = async () => {
-    setError("");
     if (!budgetData.budgetValue) {
-      setError("Please enter a budget before continuing.");
+      toast.error("Please enter your budget before continuing.");
       return;
     }
 
@@ -106,10 +105,11 @@ const SetBudget = () => {
     try {
       await preferencesService.saveBudgetPreferences(getBudgetPayload());
       storeBudgetLocally();
+      toast.success("Your budget has been successfully set.");
       navigate("/onboarding/cooking-frequency");
     } catch (err) {
       console.log(err?.message || err);
-      setError("Couldn't save your budget. Please try again.");
+      toast.error("We couldn't save your budget. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -276,11 +276,6 @@ const SetBudget = () => {
           </p>
         </div>
       </div>
-      {error && (
-        <div className="mt-3 rounded-xl bg-red-50 border border-red-100 px-4 py-3 text-sm text-red-700">
-          {error}
-        </div>
-      )}
     </OnboardingLayout>
   );
 };

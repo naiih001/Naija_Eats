@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
+import { toast } from "sonner";
 import Header from "../../components/ui/Header";
 import Button from "../../components/ui/Button";
 import Footer from "../../components/ui/Footer";
@@ -12,7 +13,6 @@ const SignIn = () => {
 
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
 
   const [formData, setFormData] = useState({
     email: "",
@@ -30,20 +30,18 @@ const SignIn = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-    setError("");
 
     try {
       await authService.signIn(formData.email, formData.password);
+      toast.success("Signed in successfully.");
       const isOnboarded = localStorage.getItem("onboarded") === "true";
 
-      const redirectPath = isOnboarded
-        ? from || "/"
-        : "/onboarding/set-budget";
+      const redirectPath = isOnboarded ? from || "/" : "/onboarding/set-budget";
 
       navigate(redirectPath, { replace: true });
     } catch (err) {
       console.error(err);
-      setError("Email doesn't exist. Please sign up for a new account.");
+      toast.error("No account found with that email. Please sign up first.");
     } finally {
       setIsLoading(false);
     }
@@ -86,12 +84,6 @@ const SignIn = () => {
           </p>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm font-medium">
-                {error}
-              </div>
-            )}
-
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-inter font-bold text-text-primary uppercase tracking-wide">
                 Email Address

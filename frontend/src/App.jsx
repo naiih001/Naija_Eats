@@ -21,6 +21,7 @@ import SplashScreen from "./pages/onboarding/SplashScreen";
 import { BudgetAlertProvider } from "./context/BudgetAlertContext";
 
 import { useState, useEffect } from "react";
+import { Toaster } from "sonner";
 
 function App() {
   const [showSplash, setShowSplash] = useState(true);
@@ -38,6 +39,7 @@ function App() {
 
   return (
     <BudgetAlertProvider>
+      <Toaster position="top-right" richColors closeButton />
       <Routes>
         <Route
           path="/onboarding"
