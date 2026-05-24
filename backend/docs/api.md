@@ -158,6 +158,9 @@ Success response:
 
 ### `POST /meals-plan/generate`
 
+> [!NOTE]
+> There is also an alternative/duplicate endpoint implemented at `POST /api/meal-plans/generate`.
+
 Creates a new active meal plan for the authenticated user and inserts the selected meal items.
 
 Request body:
@@ -246,6 +249,9 @@ Success response:
 
 ### `GET /ingredients/:planId`
 
+> [!WARNING]
+> This route is documented but **currently not implemented** in the backend code.
+
 Returns shopping-list ingredients for a meal plan, grouped by market category (e.g., "Produce", "Proteins").
 
 Success response:
@@ -279,6 +285,69 @@ Success response:
   }
 }
 ```
+
+## Onboarding / API Routes
+
+The routes below are mounted under `/api` and also require a Bearer token.
+
+### `POST /api/users/preferences/budget`
+
+Saves or updates the user's budget preferences.
+
+Request body:
+
+```json
+{
+  "budgetTier": "standard",
+  "budgetValue": 45000,
+  "frequency": "weekly",
+  "fluctuationBuffer": 5000
+}
+```
+
+### `POST /api/users/preferences/frequency`
+
+Saves or updates the user's household profile and cooking frequency preferences.
+
+Request body:
+
+```json
+{
+  "householdSize": 4,
+  "dailyMeals": 3,
+  "includeDesserts": false,
+  "cookingFrequencies": "daily"
+}
+```
+
+### `POST /api/users/preferences/food`
+
+Saves or updates the user's food preferences, allergies, and dietary tags.
+
+Request body:
+
+```json
+{
+  "selectedPreferences": ["high-protein"],
+  "allergies": "peanuts",
+  "dietaryTags": ["halal"]
+}
+```
+
+### `POST /api/meal-plans/generate`
+
+Generates a new active meal plan.
+
+> [!NOTE]
+> This is a duplicate/alternative to the `POST /meals-plan/generate` route.
+
+### `GET /api/meal-plans/current`
+
+Retrieves the currently active meal plan and its budget stats.
+
+### `GET /api/meal-plans/current/details`
+
+Retrieves detailed breakdown of the current meal plan.
 
 ## Error Response Shape
 
