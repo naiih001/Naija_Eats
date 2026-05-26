@@ -48,20 +48,21 @@ router.post("/register", async (req: Request, res: Response) => {
   }
 });
 
-router.post("/verify-email", async (req: Request, res: Response) => {
+router.get("/verify-email", async (req: Request, res: Response) => {
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
   try {
-    const { token } = req.body;
+    const { token } = req.query;
 
     if (!token) {
-      return _res.error(400, res, "Token is required");
+      return res.redirect(`${frontendUrl}/sign-in?status=error&message=Token%20is%20required&verified=false`);
     }
 
     const user = await prisma.user.findUnique({
-      where: { verifyToken: token }
+      where: { verifyToken: token as string }
     });
 
     if (!user || !user.verifyTokenExp || user.verifyTokenExp < new Date()) {
-      return _res.error(400, res, "Invalid or expired verification token");
+      return res.redirect(`${frontendUrl}/sign-in?status=error&message=Invalid%20or%20expired%20verification%20token&verified=false`);
     }
 
     await prisma.user.update({
@@ -73,10 +74,10 @@ router.post("/verify-email", async (req: Request, res: Response) => {
       }
     });
 
-    return _res.success(200, res, "Email verified successfully. You can now log in.");
+    return res.redirect(`${frontendUrl}/sign-in?status=success&message=Email%20verified%20successfully&verified=true`);
   } catch (err) {
     console.error(err);
-    return _res.error(500, res, "Server error during verification");
+    return res.redirect(`${frontendUrl}/sign-in?status=error&message=Server%20error%20during%20verification&verified=false`);
   }
 });
 
@@ -172,6 +173,30 @@ router.post("/forgot-password", async (req: Request, res: Response) => {
   } catch (err) {
     console.error(err);
     return _res.error(500, res, "Server error during forgot password request");
+  }
+});
+
+router.get("/reset-password", async (req: Request, res: Response) => {
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+  try {
+    const { token } = req.query;
+
+    if (!token) {
+      return res.redirect(`${frontendUrl}/forgot-password?status=error&message=Token%20is%20required`);
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { resetToken: token as string }
+    });
+
+    if (!user || !user.resetTokenExp || user.resetTokenExp < new Date()) {
+      return res.redirect(`${frontendUrl}/forgot-password?status=error&message=Invalid%20or%20expired%20reset%20token`);
+    }
+
+    return res.redirect(`${frontendUrl}/reset-password?token=${token}&status=success&message=Set%20new%20password`);
+  } catch (err) {
+    console.error(err);
+    return res.redirect(`${frontendUrl}/forgot-password?status=error&message=Server%20error%20during%20password%20reset`);
   }
 });
 

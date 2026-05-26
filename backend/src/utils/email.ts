@@ -1,8 +1,8 @@
 import { resend } from '../config/resend';
 
 export const sendVerificationEmail = async (email: string, token: string) => {
-  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-  const verificationUrl = `${frontendUrl}/verify-email?token=${token}`;
+  const backendUrl = process.env.BACKEND_URL || 'http://localhost:3000';
+  const verificationUrl = `${backendUrl}/auth/verify-email?token=${token}`;
 
   try {
     const { data, error } = await resend.emails.send({
@@ -31,8 +31,8 @@ export const sendVerificationEmail = async (email: string, token: string) => {
 };
 
 export const sendPasswordResetEmail = async (email: string, token: string) => {
-  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-  const resetUrl = `${frontendUrl}/reset-password?token=${token}`;
+  const backendUrl = process.env.BACKEND_URL || 'http://localhost:3000';
+  const resetUrl = `${backendUrl}/auth/reset-password?token=${token}`;
 
   try {
     const { data, error } = await resend.emails.send({

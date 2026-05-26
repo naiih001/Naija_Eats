@@ -1,159 +1,183 @@
-# Naija_Eats API Documentation
+# API Examples
 
-This document outlines the API endpoints, providing sample request inputs and expected responses.
+These examples match the current backend implementation.
 
----
+## Health Check
 
-## Auth Routes
-
-### 1. Register User
-**Endpoint:** `POST /auth/register`
-**Description:** Creates a new user and profile.
-
-**Input:**
-```json
-{
-  "full_name": "John Doe",
-  "email": "john@example.com",
-  "phone_number": "+2348000000000",
-  "password": "password123"
-}
+```bash
+curl http://localhost:3000/health
 ```
 
-**Output (201 Created):**
-```json
-{
-  "success": true,
-  "message": "User registered successfully",
-  "data": {
-    "user": {
-      "id": "uuid-123",
-      "email": "john@example.com"
-    },
-    "token": "eyJhbGciOiJIUzI1NiIsInR5c..."
-  }
-}
+## Register
+
+```bash
+curl -X POST http://localhost:3000/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "full_name": "John Doe",
+    "email": "john@example.com",
+    "phone_number": "+2348000000000",
+    "password": "password123"
+  }'
 ```
 
-### 2. Login User
-**Endpoint:** `POST /auth/login`
-**Description:** Authenticates a user and returns a JWT.
+## Log In
 
-**Input:**
-```json
-{
-  "email": "john@example.com",
-  "password": "password123"
-}
+```bash
+curl -X POST http://localhost:3000/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "john@example.com",
+    "password": "password123"
+  }'
 ```
 
-**Output (200 OK):**
-```json
-{
-  "success": true,
-  "message": "User logged in successfully",
-  "data": {
-    "token": "eyJhbGciOiJIUzI1NiIsInR5c..."
-  }
-}
+## Resend Verification Email
+
+```bash
+curl -X POST http://localhost:3000/auth/resend-verification \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "john@example.com"
+  }'
 ```
 
----
+## Forgot Password
 
-## Onboarding Routes
-
-### 3. Save Budget Preferences
-**Endpoint:** `POST /api/users/preferences/budget`
-
-**Input:**
-```json
-{
-  "budgetTier": "Standard",
-  "budgetValue": "7000-10000",
-  "frequency": "Weekly",
-  "fluctuationBuffer": "10%"
-}
+```bash
+curl -X POST http://localhost:3000/auth/forgot-password \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "john@example.com"
+  }'
 ```
 
-**Output (200 OK):**
-```json
-{
-  "success": true,
-  "message": "Budget preferences saved successfully"
-}
+## Reset Password
+
+```bash
+curl -X POST http://localhost:3000/auth/reset-password \
+  -H "Content-Type: application/json" \
+  -d '{
+    "token": "reset-token",
+    "newPassword": "new-password123"
+  }'
 ```
 
-### 4. Save Cooking Frequency
-**Endpoint:** `POST /api/users/preferences/frequency`
+## Save Combined Preference Payload
 
-**Input:**
-```json
-{
-  "householdSize": "1",
-  "dailyMeals": "3",
-  "includeDesserts": false,
-  "cookingFrequencies": ["Daily (7 Days)"]
-}
+```bash
+curl -X POST http://localhost:3000/preference \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "amount": "50000",
+    "frequency": "monthly",
+    "fluctuation_buffer": "5000",
+    "household_size": "4",
+    "daily_meals": "3",
+    "is_dessert": false,
+    "cooking_frequency": "daily",
+    "preferences": ["high-protein", "local-meals"],
+    "allergies": ["peanuts", "shellfish"]
+  }'
 ```
 
-**Output (200 OK):**
-```json
-{
-  "success": true,
-  "message": "Cooking frequency preferences saved successfully"
-}
+## Get Meals
+
+```bash
+curl http://localhost:3000/meals \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
-### 5. Save Food Preferences
-**Endpoint:** `POST /api/users/preferences/food`
+Filtered by category:
 
-**Input:**
-```json
-{
-  "selectedPreferences": ["African", "Continental"],
-  "allergies": "Peanuts",
-  "dietaryTags": ["Gluten-Free"]
-}
+```bash
+curl "http://localhost:3000/meals?category=lunch" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
-**Output (200 OK):**
-```json
-{
-  "success": true,
-  "message": "Food preferences saved successfully"
-}
+## Generate Meal Plan From `/meals-plan/generate`
+
+```bash
+curl -X POST http://localhost:3000/meals-plan/generate \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "items": [
+      {
+        "meal_id": "meal-uuid-1",
+        "day_of_week": "monday",
+        "meal_slot": "breakfast"
+      }
+    ]
+  }'
 ```
 
----
+## Get Meal Plan By ID
 
-## Meal Plan Routes
-
-### 6. Generate Meal Plan
-**Endpoint:** `POST /api/meal-plans/generate`
-
-**Input:** (None - Triggered based on user preferences)
-
-**Output (201 Created):**
-```json
-{
-  "success": true,
-  "message": "Meal plan generated successfully",
-  "data": {
-    "planId": "pln_987654321"
-  }
-}
+```bash
+curl http://localhost:3000/meals-plan/PLAN_ID \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
-### 7. Get Current Meal Plan
-**Endpoint:** `GET /api/meal-plans/current`
+## Save Budget Preferences
 
-**Output (200 OK):**
-```json
-{
-  "success": true,
-  "message": "Meal plan retrieved successfully",
-  "data": {
-    "budgetStats": { "weeklyBudget": "₦45,000", "totalMeals": 21, "prepTimeAvg": "35 Mins" }
-  }
-}
+```bash
+curl -X POST http://localhost:3000/api/users/preferences/budget \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "budgetTier": "Standard",
+    "budgetValue": "7000-10000",
+    "frequency": "Weekly",
+    "fluctuationBuffer": "10%"
+  }'
+```
+
+## Save Cooking Frequency Preferences
+
+```bash
+curl -X POST http://localhost:3000/api/users/preferences/frequency \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "householdSize": "1",
+    "dailyMeals": "3",
+    "includeDesserts": false,
+    "cookingFrequencies": "Daily (7 Days)"
+  }'
+```
+
+## Save Food Preferences
+
+```bash
+curl -X POST http://localhost:3000/api/users/preferences/food \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "selectedPreferences": ["African", "Continental"],
+    "allergies": "Peanuts",
+    "dietaryTags": ["Gluten-Free"]
+  }'
+```
+
+## Generate Meal Plan From `/api/meal-plans/generate`
+
+```bash
+curl -X POST http://localhost:3000/api/meal-plans/generate \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+## Get Current Meal Plan Summary
+
+```bash
+curl http://localhost:3000/api/meal-plans/current \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+## Get Current Meal Plan Details
+
+```bash
+curl http://localhost:3000/api/meal-plans/current/details \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
