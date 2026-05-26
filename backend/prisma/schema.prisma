@@ -12,6 +12,9 @@ model User {
   password     String    // Note: Store as hashed password
   phone_number String?
   profile      Profile?
+  isVerified      Boolean   @default(false)
+  verifyToken     String?   @unique
+  verifyTokenExp  DateTime?
   created_at   DateTime  @default(now())
 }
 
