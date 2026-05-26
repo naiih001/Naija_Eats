@@ -1,6 +1,6 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-const postWithAuth = async (endpoint, body) => {
+export const postWithAuth = async (endpoint, body) => {
   const token = localStorage.getItem("token");
 
   if (!token) {

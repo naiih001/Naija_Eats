@@ -8,7 +8,7 @@ import {
   StopWatch,
   BoltIcon,
 } from "../../constants/icons";
-// import HomePageLayout from "../layout/HomePageLayout";
+
 import {
   budgetStats,
   featuredMeal,
@@ -41,7 +41,7 @@ const MealPlan = () => {
 
   return (
     <>
-      <div className="max-w-[1400px] mx-auto px-6 md:px-12">
+      <div className="max-w-350 mx-auto px-6 md:px-12">
         {/* Page Header */}
         <header className="mb-10">
           <h1 className="text-subheading font-display font-bold leading-tight mb-2">
@@ -140,7 +140,7 @@ const MealPlan = () => {
               <h3 className="text-2xl font-display font-bold mb-2 text-[#2d4a1e]">
                 Shopping List Ready
               </h3>
-              <p className="text-sm text-text-muted mb-6 max-w-[250px] leading-relaxed">
+              <p className="text-sm text-text-muted mb-6 max-w-62.5 leading-relaxed">
                 All ingredients for this week are automatically calculated for
                 your cart.
               </p>

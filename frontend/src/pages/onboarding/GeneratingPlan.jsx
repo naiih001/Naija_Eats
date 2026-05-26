@@ -56,7 +56,7 @@ const GeneratingPlan = () => {
         };
 
         await preferencesService.generateMealPlans(payload);
-
+        toast.success("Meal plan generated successfully!");
         // to clean up all the stored items in user's localStorage
         localStorage.removeItem("onboarding_budget");
         localStorage.removeItem("onboarding_frequency");
@@ -82,7 +82,7 @@ const GeneratingPlan = () => {
         toast.error(
           "We couldn't generate your meal plan. Please sign in or try again.",
         );
-        
+
         setHasError(true);
       }
     };

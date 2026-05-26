@@ -1,20 +1,25 @@
 // import { useState } from "react";
+import { useState } from "react";
 import { WarningIcon } from "../../constants/icons";
 
 const BudgetAlertBanner = ({
   shoppingListTotal = 0,
   budgetLimit = 0,
-  //  isVisible = false
+  isVisible = false,
 }) => {
-  // const [dismissedAlert, setDismissedAlert] = useState(false);
+  const [dismissedAlert, setDismissedAlert] = useState(false);
 
   // Compute whether to show based on props
-  // const shouldShow = isVisible && shoppingListTotal > budgetLimit && !dismissedAlert && budgetLimit > 0;
+  const shouldShow =
+    isVisible &&
+    shoppingListTotal > budgetLimit &&
+    !dismissedAlert &&
+    budgetLimit > 0;
   const overAmount = shoppingListTotal - budgetLimit;
   const utilization =
     budgetLimit > 0 ? Math.round((shoppingListTotal / budgetLimit) * 100) : 0;
 
-  // if (!shouldShow) return null;
+  if (!shouldShow) return null;
 
   return (
     <div className="animate-in slide-in-from-top duration-300 bg-red-50 border-b border-red-200 px-4 py-3">
@@ -33,7 +38,7 @@ const BudgetAlertBanner = ({
           </div>
         </div>
         <button
-          // onClick={() => setDismissedAlert(true)}
+          onClick={() => setDismissedAlert(true)}
           className="text-red-600 hover:text-red-700 font-bold text-lg shrink-0"
           aria-label="Close alert"
         >

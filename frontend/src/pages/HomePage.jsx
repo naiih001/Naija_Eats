@@ -27,9 +27,9 @@ const HomePage = () => {
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
         <div
           onClick={() => navigate("/meal/jollof-rice-and-grilled-fish")}
-          className="lg:col-span-7 bg-text-primary rounded-3xl overflow-hidden text-white cursor-pointer group"
+          className="lg:col-span-5 bg-text-primary rounded-3xl overflow-hidden text-white cursor-pointer group"
         >
-          <div className="relative h-[300px] lg:h-[400px]">
+          <div className="relative h-70">
             <img
               src="/images/jollof_fish_plantains.png"
               alt="Jollof Rice & Grilled Fish"
@@ -39,18 +39,18 @@ const HomePage = () => {
               Monday
             </div>
           </div>
-          <div className="p-8">
+          <div className="p-4 ">
             <div className="flex justify-between items-center mb-3">
-              <h2 className="text-3xl lg:text-4xl font-display font-bold">
+              <h2 className="text-xl lg:text-subheading font-display font-bold">
                 Jollof Rice & Grilled Fish
               </h2>
               <HeartIcon className="w-8 h-8 text-accent-orange fill-accent-orange" />
             </div>
-            <p className="text-white/70 text-lg mb-6 leading-relaxed max-w-xl">
+            <p className="text-text-muted text-base lg:text-lg mb-6 leading-relaxed max-w-xl">
               A decade proven meal that has served various generations of
               African Heritage.
             </p>
-            <div className="flex gap-6 text-sm font-medium opacity-80">
+            <div className="flex gap-4 text-sm font-medium opacity-80">
               <div className="flex items-center gap-2">
                 <StopWatch className="w-5 h-5" />
                 <span>45 mins</span>
@@ -63,7 +63,7 @@ const HomePage = () => {
           </div>
         </div>
 
-        <div className="lg:col-span-5 bg-transparent rounded-3xl border-2 border-text-primary p-8 flex flex-col justify-between">
+        <div className="lg:col-span-7 bg-transparent rounded-3xl border-2 border-text-primary p-8 flex flex-col justify-between">
           <div className="flex flex-col gap-6">
             <div className="inline-flex items-center gap-2 bg-[#E8F5E9] text-text-primary px-3 py-1 rounded-full w-fit">
               <div className="w-4 h-4 bg-text-primary rounded-full flex items-center justify-center text-[8px] text-white">
@@ -128,7 +128,7 @@ const HomePage = () => {
             {WeekPlan.slice(0, 3).map((day, idx) => (
               <div
                 key={idx}
-                className="flex flex-col gap-3 min-w-[160px] shrink-0 group cursor-pointer"
+                className="flex flex-col gap-3 min-w-40 shrink-0 group cursor-pointer"
               >
                 <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest ml-1">
                   {day.day}
@@ -159,7 +159,7 @@ const HomePage = () => {
                 </div>
               </div>
             ))}
-            <div className="flex flex-col justify-center items-center gap-3 min-w-[160px] h-60 rounded-3xl border-2 border-dashed border-text-muted/20 bg-text-muted/5 text-text-muted group hover:bg-text-muted/10 transition-colors cursor-pointer">
+            <div className="flex flex-col justify-center items-center gap-3 min-w-40 h-60 rounded-3xl border-2 border-dashed border-text-muted/20 bg-text-muted/5 text-text-muted group hover:bg-text-muted/10 transition-colors cursor-pointer">
               <div className="w-10 h-10 rounded-full border-2 border-text-muted/20 flex items-center justify-center group-hover:scale-110 transition-transform">
                 <PlusIcon className="w-6 h-6" />
               </div>
@@ -178,7 +178,7 @@ const HomePage = () => {
               <h3 className="text-xl font-display font-bold mb-1">
                 Market Day
               </h3>
-              <p className="text-[10px] font-medium text-white/80 max-w-[180px]">
+              <p className="text-[10px] font-medium text-white/80 max-w-45">
                 Pre-order local ingredients for next week's meal plan.
               </p>
             </div>
@@ -196,7 +196,7 @@ const HomePage = () => {
               <h3 className="text-xl font-display font-bold mb-1">
                 Auto-Generate
               </h3>
-              <p className="text-[10px] font-medium text-white/80 max-w-[180px]">
+              <p className="text-[10px] font-medium text-white/80 max-w-45">
                 Create a 7-day plan based on your preferences.
               </p>
             </div>
@@ -233,7 +233,7 @@ const HomePage = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Large Trending Recipe */}
           <div className="lg:col-span-7 bg-white rounded-4xl overflow-hidden group cursor-pointer border border-text-muted/5">
-            <div className="relative h-[400px] lg:h-[500px]">
+            <div className="relative h-100 lg:h-125">
               <img
                 src="/images/fisherman_soup.png"
                 alt="Fisherman's Harvest Soup"
@@ -275,7 +275,7 @@ const HomePage = () => {
 
           {/* Grid of smaller recipes */}
           <div className="lg:col-span-5 grid grid-cols-1 gap-6">
-            <div className="bg-[#1A3013] rounded-4xl overflow-hidden  group cursor-pointer h-full min-h-[240px] relative">
+            <div className="bg-[#1A3013] rounded-4xl overflow-hidden  group cursor-pointer h-full min-h-60 relative">
               <img
                 src="/images/ribeye.png"
                 alt="Suya-Spiced Ribeye"
@@ -295,7 +295,7 @@ const HomePage = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-6 h-full min-h-[240px]">
+            <div className="grid grid-cols-2 gap-6 h-full min-h-60">
               <div className="bg-[#F8F8DF] rounded-4xl overflow-hidden border border-text-muted/10 group cursor-pointer relative">
                 <img
                   src="/images/puffpuff.png"

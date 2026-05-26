@@ -1,11 +1,21 @@
 // import React from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Button from "../../components/ui/Button";
 import { FilterIcon, TrendDownIcon } from "../../constants/icons";
 import { WeekPlan } from "../../constants/weekPlan";
+import { planService } from "../../services/plan.api";
 
 const WeeklyPlan = () => {
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const getMealPlan = async () => {
+      const data = await planService.getCurrentMealPlan();
+      console.log("Current meal plan data in WeeklyPlan:", data);
+    };
+    getMealPlan();
+  }, []);
 
   return (
     <div className="bg-bg-background min-h-screen pb-50 lg:pb-30">
