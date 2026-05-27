@@ -29,3 +29,33 @@ export const sendVerificationEmail = async (email: string, token: string) => {
     return { success: false, error: err };
   }
 };
+
+export const sendPasswordResetEmail = async (email: string, token: string) => {
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+  const resetUrl = `${frontendUrl}/reset-password?token=${token}`;
+
+  try {
+    const { data, error } = await resend.emails.send({
+      from: 'Naija Eats <onboarding@resend.dev>',
+      to: email,
+      subject: 'Reset your password',
+      html: `
+        <h1>Password Reset Request</h1>
+        <p>You requested to reset your password. Click the link below to set a new one:</p>
+        <a href="${resetUrl}" style="display: inline-block; padding: 10px 20px; background-color: #dc3545; color: white; text-decoration: none; border-radius: 5px;">Reset Password</a>
+        <p>This link will expire in 1 hour.</p>
+        <p>If you didn't request a password reset, you can safely ignore this email.</p>
+      `,
+    });
+
+    if (error) {
+      console.error('Error sending password reset email:', error);
+      return { success: false, error };
+    }
+
+    return { success: true, data };
+  } catch (err) {
+    console.error('Exception sending password reset email:', err);
+    return { success: false, error: err };
+  }
+};
