@@ -26,6 +26,6 @@ const getWithAuth = async (endpoint) => {
 };
 
 export const planService = {
-  getCurrentMealPlan: () => getWithAuth("/meals"),
+  getCurrentMealPlan: () => getWithAuth("/api/meal-plans/current"),
 
 };
