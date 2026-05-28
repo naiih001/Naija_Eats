@@ -7,6 +7,7 @@ import {
   ShoppingCartIcon,
   UserIcon,
 } from "../../constants/icons";
+import { authService } from "../../services/auth.api";
 
 const Sidebar = ({ isExpanded }) => {
   const location = useLocation();
@@ -25,6 +26,17 @@ const Sidebar = ({ isExpanded }) => {
       }
     }
   }, []);
+
+  useEffect(() => {
+    const savedUser = async () => {
+      const data = await authService.userInfo();
+      console.log("User info data in Sidebar:", data);
+      if (data.data?.user?.full_name) {
+        setUserName(data.data.user.full_name);
+      }
+    };
+    savedUser();
+  }, [location.pathname]);
 
   const navItems = [
     { label: "Home", icon: HomeIcon, path: "/" },

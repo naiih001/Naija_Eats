@@ -10,6 +10,7 @@ import {
   ProteinIcon,
   SpiceIcon,
 } from "../constants/icons";
+import { WeeklySummaryCard } from "../components/ui/WeeklySummaryCard";
 
 const Market = () => {
   const [activeFilter, setActiveFilter] = useState("Today's Meals");
@@ -41,15 +42,15 @@ const Market = () => {
 
   // Calculate and update shopping list total
   useEffect(() => {
-    const total = marketData.reduce((sum, category) => {
-      return (
+    const total = marketData.reduce(
+      (sum, category) =>
         sum +
-        category.items.reduce((catSum, item) => {
-          // Assuming each item has a price property; adjust based on your data structure
-          return catSum + (item.price || 0);
-        }, 0)
-      );
-    }, 0);
+        category.items.reduce(
+          (catSum, item) => catSum + (item.minPrice || 0),
+          0,
+        ),
+      0,
+    );
     setShoppingListTotal(total);
   }, [marketData, setShoppingListTotal]);
 
@@ -73,6 +74,22 @@ const Market = () => {
     );
   };
 
+  const allBought = marketData.every((category) =>
+    category.items.every((item) => item.bought),
+  );
+
+  const handleMarkAllBought = () => {
+    const allBought = marketData.every((category) =>
+      category.items.every((item) => item.bought),
+    );
+
+    setMarketData((prevData) =>
+      prevData.map((category) => ({
+        ...category,
+        items: category.items.map((item) => ({ ...item, bought: !allBought })),
+      })),
+    );
+  };
   const filters = ["Today's Meals", "This Week's Meals", "All"];
 
   return (
@@ -80,6 +97,7 @@ const Market = () => {
       <h1 className="text-[2.5rem] font-display font-extrabold text-text-primary leading-none">
         MARKET
       </h1>
+      <WeeklySummaryCard />
 
       {/* Filter Tabs */}
       <div className="flex gap-2 overflow-x-auto no-scrollbar py-1">
@@ -245,6 +263,17 @@ const Market = () => {
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
+                      {item.price && (
+                        <span
+                          className={`text-xs font-bold ${
+                            item.bought
+                              ? "text-text-muted line-through"
+                              : "text-text-primary"
+                          }`}
+                        >
+                          ₦ {item.price.toFixed(2)}
+                        </span>
+                      )}
                       {item.qty && (
                         <span className="bg-[#F8F8DF] text-text-primary text-[10px] font-bold px-3 py-1 rounded-lg border border-text-primary/10">
                           {item.qty}
@@ -258,10 +287,52 @@ const Market = () => {
           </div>
         ))}
       </div>
+      <div className="bg-white rounded-2xl p-4 flex items-center justify-between shadow-sm">
+        <div className="flex flex-col gap-0.5">
+          <span className="text-[11px] font-bold uppercase tracking-widest text-text-muted">
+            Estimated Total
+          </span>
+          <span className="text-2xl font-display font-extrabold text-text-primary">
+            ₦
+            {marketData
+              .reduce(
+                (sum, cat) =>
+                  sum +
+                  cat.items.reduce((s, item) => s + (item.minPrice || 0), 0),
+                0,
+              )
+              .toLocaleString()}
+            {" – "}₦
+            {marketData
+              .reduce(
+                (sum, cat) =>
+                  sum +
+                  cat.items.reduce((s, item) => s + (item.maxPrice || 0), 0),
+                0,
+              )
+              .toLocaleString()}
+          </span>
+        </div>
+        <div className="flex flex-col items-end gap-0.5">
+          <span className="text-[10px] text-text-muted font-medium">
+            {marketData.reduce((sum, cat) => sum + cat.items.length, 0)} items
+          </span>
+          <span className="text-[10px] text-text-muted font-medium">
+            {marketData.reduce(
+              (sum, cat) => sum + cat.items.filter((i) => i.bought).length,
+              0,
+            )}{" "}
+            bought
+          </span>
+        </div>
+      </div>
 
       <div className="">
-        <button className="bg-accent-orange text-white w-full rounded-2xl h-14 text-sm font-bold shadow-orange-200 hover:bg-[#e66a13] transition-colors">
-          Mark all as bought
+        <button
+          onClick={handleMarkAllBought}
+          className="bg-accent-orange text-white w-full max-w-xs rounded-2xl h-14 text-sm font-bold shadow-orange-200 hover:bg-[#e66a13] transition-colors cursor-pointer"
+        >
+          {allBought ? "Unmark all" : "Mark all as bought"}
         </button>
       </div>
     </main>
