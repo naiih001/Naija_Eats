@@ -48,10 +48,6 @@ router.post("/register", async (req: Request, res: Response) => {
   }
 });
 
-router.get("/verify-email", async (req: Request, res: Response) => {
-  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-  try {
-    const { token } = req.query;
 router.get("/verify-email/:token", async (req: Request, res: Response) => {
   try {
     const { token } = req.params;
@@ -87,6 +83,7 @@ router.get("/verify-email/:token", async (req: Request, res: Response) => {
 });
 
 router.post("/verify-email/:token", async (req: Request, res: Response) => {
+  const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
   try {
     const { token } = req.params;
 
@@ -271,4 +268,4 @@ router.post("/reset-password", async (req: Request, res: Response) => {
   }
 });
 
-export default router;
+export { router };

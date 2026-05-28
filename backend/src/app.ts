@@ -3,7 +3,7 @@ import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
 import mealsRoutes from "./routes/meals";
-import authRoutes from "./routes/auth";
+import { router as authRoutes } from "./routes/auth";
 import onboardingRoutes from "./routes/onboarding";
 import { authMiddleware } from "./middleware/auth";
 
