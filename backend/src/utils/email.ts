@@ -39,7 +39,7 @@ export const sendVerificationEmail = async (email: string, token: string) => {
     // New EmailJS implementation
     const response = await emailjs.send(
       EMAILJS_SERVICE_ID,
-      EMAILJS_TEMPLATE_ID,
+      EMAILJS_TEMPLATE_ID_VERIFY,
       {
         email: email,
         url: verificationUrl,
@@ -79,7 +79,7 @@ export const sendPasswordResetEmail = async (email: string, token: string) => {
     // New EmailJS implementation
     const response = await emailjs.send(
       EMAILJS_SERVICE_ID,
-      EMAILJS_TEMPLATE_ID,
+      EMAILJS_TEMPLATE_ID_RESET,
       {
         email: email,
         url: resetUrl,
