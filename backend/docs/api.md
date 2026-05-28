@@ -68,7 +68,7 @@ Response:
 
 ### `POST /auth/register`
 
-Creates a user, creates a profile, stores the password hash, generates an email verification token, and sends a verification email.
+Registers a new user, hashes their password, and creates a profile. Sends a verification email.
 
 Request body:
 
@@ -81,12 +81,81 @@ Request body:
 }
 ```
 
-Required fields:
+---
 
-- `full_name`
-- `email`
-- `phone_number`
-- `password`
+### `POST /auth/login`
+
+Logs in an existing user and returns a JWT. Requires verified email.
+
+Request body:
+
+```json
+{
+  "email": "user@example.com",
+  "password": "password"
+}
+```
+
+---
+
+### `POST /auth/resend-verification`
+
+Resends the verification email if the user is not yet verified.
+
+Request body:
+
+```json
+{
+  "email": "user@example.com"
+}
+```
+
+---
+
+### `GET /auth/verify-email/:token`
+
+Verifies a user's email address using the token from the verification email. Redirects to the frontend with status.
+
+---
+
+### `POST /auth/verify-email/:token`
+
+Alternative endpoint to verify email via POST (returns JSON response).
+
+---
+
+### `POST /auth/forgot-password`
+
+Initiates the forgot password flow. Sends a password reset link to the user's email if the account exists.
+
+Request body:
+
+```json
+{
+  "email": "user@example.com"
+}
+```
+
+---
+
+### `POST /auth/reset-password`
+
+Resets the user's password using a valid reset token (from the email link).
+
+Request body:
+
+```json
+{
+  "token": "reset-token-from-email",
+  "newPassword": "new-password"
+}
+```
+
+  "email": "user@example.com",
+  "phone_number": "+2348000000000",
+  "password": "password"
+}
+```
 
 Success response:
 

@@ -7,17 +7,17 @@ datasource db {
 }
 
 model User {
-  id           String    @id @default(uuid())
-  email        String    @unique
-  password     String    // Note: Store as hashed password
-  phone_number String?
-  profile      Profile?
-  isVerified      Boolean   @default(false)
-  verifyToken     String?   @unique
-  verifyTokenExp  DateTime?
-  resetToken      String?   @unique
-  resetTokenExp   DateTime?
-  created_at   DateTime  @default(now())
+  id             String    @id @default(uuid())
+  email          String    @unique
+  password       String // Note: Store as hashed password
+  phone_number   String?
+  profile        Profile?
+  isVerified     Boolean   @default(false)
+  verifyToken    String?   @unique
+  verifyTokenExp DateTime?
+  resetToken     String?   @unique
+  resetTokenExp  DateTime?
+  created_at     DateTime  @default(now())
 }
 
 model Profile {
@@ -25,7 +25,7 @@ model Profile {
   user_id    String @unique
   full_name  String
   avatar_url String @default("")
-  user       User   @relation(fields: [user_id], references: [id])
+  user       User   @relation(fields: [user_id], references: [id], onDelete: Cascade)
 }
 
 model budgets {
@@ -65,7 +65,7 @@ model dietary_tags {
 }
 
 model meals {
-  id             String  @id @default(uuid())
+  id             String            @id @default(uuid())
   name           String
   category       String
   price_min      Decimal?
@@ -77,17 +77,17 @@ model meals {
 }
 
 model meal_plans {
-  id      String @id @default(uuid())
-  user_id String
-  status  String
-  items   meal_plan_items[]
+  id            String                @id @default(uuid())
+  user_id       String
+  status        String
+  items         meal_plan_items[]
   shopping_list shopping_list_items[]
 }
 
 model meal_plan_items {
   id          String     @id @default(uuid())
   plan_id     String
-  plan        meal_plans @relation(fields: [plan_id], references: [id])
+  plan        meal_plans @relation(fields: [plan_id], references: [id], onDelete: Cascade)
   meal_id     String
   meal        meals      @relation(fields: [meal_id], references: [id])
   day_of_week String
@@ -97,7 +97,7 @@ model meal_plan_items {
 model shopping_list_items {
   id           String     @id @default(uuid())
   meal_plan_id String
-  plan         meal_plans @relation(fields: [meal_plan_id], references: [id])
+  plan         meal_plans @relation(fields: [meal_plan_id], references: [id], onDelete: Cascade)
   name         String
   category     String?
   quantity     String?
