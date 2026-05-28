@@ -18,4 +18,4 @@ COPY src ./src
 
 EXPOSE 3000
 
-CMD ["sh", "-c", "bunx prisma migrate deploy && bun run start"]
+CMD ["bun", "run", "start"]
