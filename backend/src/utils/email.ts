@@ -1,14 +1,26 @@
-import transporter from "../config/mail";
+// import transporter from "../config/mail";
+import emailjs from "@emailjs/nodejs";
 
 const FROM_EMAIL =
   process.env.EMAIL_FROM || "Naija Eats <naija-eats@no-reply.com>";
 
+// Initialize EmailJS
+emailjs.init({
+  publicKey: process.env.EMAILJS_PUBLIC_KEY!,
+  privateKey: process.env.EMAILJS_PRIVATE_KEY!,
+});
+
+const EMAILJS_SERVICE_ID = "service_t4xoffb";
+const EMAILJS_TEMPLATE_ID_VERIFY = "template_867634j";
+const EMAILJS_TEMPLATE_ID_RESET = "template_867634j";
+
 export const sendVerificationEmail = async (email: string, token: string) => {
-  const backendUrl = process.env.BACKEND_URL || 'http://localhost:3000';
+  const backendUrl = process.env.BACKEND_URL || "http://localhost:3000";
   const verificationUrl = `${backendUrl}/auth/verify-email/${token}`;
 
-
   try {
+    /*
+    // Old Nodemailer implementation
     const info = await transporter.sendMail({
       from: FROM_EMAIL,
       to: email,
@@ -21,8 +33,21 @@ export const sendVerificationEmail = async (email: string, token: string) => {
         <p>If you didn't create an account, you can safely ignore this email.</p>
       `,
     });
-
     return { success: true, data: info };
+    */
+
+    // New EmailJS implementation
+    const response = await emailjs.send(
+      EMAILJS_SERVICE_ID,
+      EMAILJS_TEMPLATE_ID,
+      {
+        email: email,
+        url: verificationUrl,
+        from_name: "Naija Eats",
+      },
+    );
+
+    return { success: true, data: response };
   } catch (err) {
     console.error("Exception sending verification email:", err);
     return { success: false, error: err };
@@ -34,6 +59,8 @@ export const sendPasswordResetEmail = async (email: string, token: string) => {
   const resetUrl = `${frontendUrl}/reset-password?token=${token}`;
 
   try {
+    /*
+    // Old Nodemailer implementation
     const info = await transporter.sendMail({
       from: FROM_EMAIL,
       to: email,
@@ -46,8 +73,21 @@ export const sendPasswordResetEmail = async (email: string, token: string) => {
         <p>If you didn't request a password reset, you can safely ignore this email.</p>
       `,
     });
-
     return { success: true, data: info };
+    */
+
+    // New EmailJS implementation
+    const response = await emailjs.send(
+      EMAILJS_SERVICE_ID,
+      EMAILJS_TEMPLATE_ID,
+      {
+        email: email,
+        url: resetUrl,
+        from_name: "Naija Eats",
+      },
+    );
+
+    return { success: true, data: response };
   } catch (err) {
     console.error("Exception sending password reset email:", err);
     return { success: false, error: err };
