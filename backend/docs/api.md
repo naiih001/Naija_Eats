@@ -1,6 +1,6 @@
 # API Reference
 
-The API is mounted from `src/app.ts`.
+The Express app is defined in [src/app.ts](/home/isaac/Documents/caya/Naija_Eats/backend/src/app.ts:1).
 
 ## Base URL
 
@@ -10,11 +10,52 @@ Local development defaults to:
 http://localhost:3000
 ```
 
-## Health
+## Response Shape
+
+Most JSON endpoints use the shared helper in [src/utils/helper.ts](/home/isaac/Documents/caya/Naija_Eats/backend/src/utils/helper.ts:1).
+
+Success:
+
+```json
+{
+  "success": true,
+  "message": "Request completed successfully",
+  "data": {}
+}
+```
+
+Error:
+
+```json
+{
+  "success": false,
+  "message": "Error message"
+}
+```
+
+## Authentication
+
+Protected routes require:
+
+```http
+Authorization: Bearer <jwt_token>
+```
+
+JWTs are validated by [src/middleware/auth.ts](/home/isaac/Documents/caya/Naija_Eats/backend/src/middleware/auth.ts:1). On success, `req.user` contains:
+
+```json
+{
+  "id": "user-uuid",
+  "email": "user@example.com",
+  "phone_number": "+2348000000000"
+}
+```
+
+## Public Routes
 
 ### `GET /health`
 
-Checks whether the server is running.
+Checks server health.
 
 Response:
 
@@ -25,13 +66,9 @@ Response:
 }
 ```
 
-## Auth Routes
-
-Auth routes are mounted under `/auth` and do not require a bearer token.
-
 ### `POST /auth/register`
 
-Registers a new user, hashes their password, and creates a profile.
+Creates a user, creates a profile, stores the password hash, generates an email verification token, and sends a verification email.
 
 Request body:
 
@@ -40,36 +77,61 @@ Request body:
   "full_name": "Example User",
   "email": "user@example.com",
   "phone_number": "+2348000000000",
-  "password": "password"
+  "password": "password123"
 }
 ```
+
+Required fields:
+
+- `full_name`
+- `email`
+- `phone_number`
+- `password`
 
 Success response:
 
 ```json
 {
   "success": true,
-  "message": "User registered successfully",
+  "message": "User registered successfully. Please check your email to verify your account.",
   "data": {
     "user": {
       "id": "user-uuid",
       "email": "user@example.com"
-    },
-    "token": "jwt-token"
+    }
   }
 }
 ```
 
+Error responses:
+
+- `400` if any required field is missing.
+- `500` on server or database failure.
+
+### `GET /auth/verify-email`
+
+Verifies a user's email using the `token` query parameter. This route redirects to the frontend instead of returning JSON.
+
+Query parameters:
+
+- `token`
+
+Behavior:
+
+- On success: redirects to `${FRONTEND_URL}/sign-in?status=success&message=Email%20verified%20successfully&verified=true`
+- On invalid or expired token: redirects to `${FRONTEND_URL}/sign-in?status=error&message=Invalid%20or%20expired%20verification%20token&verified=false`
+- On missing token: redirects to `${FRONTEND_URL}/sign-in?status=error&message=Token%20is%20required&verified=false`
+
 ### `POST /auth/login`
 
-Logs in an existing user and returns a JWT.
+Authenticates a verified user and returns a JWT valid for 24 hours.
 
 Request body:
 
 ```json
 {
   "email": "user@example.com",
-  "password": "password"
+  "password": "password123"
 }
 ```
 
@@ -85,29 +147,125 @@ Success response:
 }
 ```
 
-## Protected Routes
+Error responses:
 
-The routes below require:
+- `401` for invalid credentials.
+- `403` if the email is not yet verified.
+- `500` on server failure.
 
-```http
-Authorization: Bearer <jwt_token>
-```
+### `POST /auth/resend-verification`
 
-The authentication middleware validates the JWT and attaches the user object (queried from the database via Prisma) to the request.
-
-### `POST /preference`
-
-Saves or updates onboarding and preference data for the authenticated user. This data is stored across `budgets`, `household_profiles`, `user_preferences`, and `user_allergies` models.
+Generates a fresh email verification token and sends another verification email.
 
 Request body:
 
 ```json
 {
-  "amount": 50000,
+  "email": "user@example.com"
+}
+```
+
+Success response:
+
+```json
+{
+  "success": true,
+  "message": "Verification email resent successfully."
+}
+```
+
+Error responses:
+
+- `400` if `email` is missing.
+- `400` if the user is already verified.
+- `404` if no user exists for the email.
+- `500` on server failure.
+
+### `POST /auth/forgot-password`
+
+Generates a password reset token and sends a reset email. To avoid email enumeration, this returns the same success message whether or not the email exists.
+
+Request body:
+
+```json
+{
+  "email": "user@example.com"
+}
+```
+
+Success response:
+
+```json
+{
+  "success": true,
+  "message": "If an account with that email exists, a password reset link has been sent."
+}
+```
+
+Error responses:
+
+- `400` if `email` is missing.
+- `500` on server failure.
+
+### `GET /auth/reset-password`
+
+Validates a password-reset token and redirects to the frontend instead of returning JSON.
+
+Query parameters:
+
+- `token`
+
+Behavior:
+
+- On success: redirects to `${FRONTEND_URL}/reset-password?token=<token>&status=success&message=Set%20new%20password`
+- On invalid or expired token: redirects to `${FRONTEND_URL}/forgot-password?status=error&message=Invalid%20or%20expired%20reset%20token`
+- On missing token: redirects to `${FRONTEND_URL}/forgot-password?status=error&message=Token%20is%20required`
+
+### `POST /auth/reset-password`
+
+Consumes a password reset token and stores a new password hash.
+
+Request body:
+
+```json
+{
+  "token": "reset-token",
+  "newPassword": "new-password123"
+}
+```
+
+Success response:
+
+```json
+{
+  "success": true,
+  "message": "Password reset successfully. You can now log in with your new password."
+}
+```
+
+Error responses:
+
+- `400` if `token` or `newPassword` is missing.
+- `400` if the token is invalid or expired.
+- `500` on server failure.
+
+## Protected Routes Mounted At `/`
+
+These routes come from [src/routes/meals.ts](/home/isaac/Documents/caya/Naija_Eats/backend/src/routes/meals.ts:1).
+
+### `POST /preference`
+
+Saves onboarding data in one transaction across `budgets`, `household_profiles`, `user_preferences`, and `user_allergies`.
+
+Request body:
+
+```json
+{
+  "amount": "50000",
   "frequency": "monthly",
-  "fluctuation_buffer": 5000,
-  "household_size": 4,
-  "daily_meals": 3,
+  "fluctuation_buffer": "5000",
+  "household_size": "4",
+  "daily_meals": "3",
   "is_dessert": false,
   "cooking_frequency": "daily",
   "preferences": ["high-protein", "local-meals"],
@@ -126,15 +284,17 @@ Success response:
 
 ### `GET /meals`
 
-Returns the catalogue of available meals. Can be filtered by category.
+Returns meals ordered alphabetically by name.
 
 Optional query parameters:
 
-```text
-category=breakfast|lunch|dinner
-```
+- `category`
 
-Example: `GET /meals?category=lunch`
+Example:
+
+```text
+GET /meals?category=lunch
+```
 
 Success response:
 
@@ -147,10 +307,11 @@ Success response:
       "id": "meal-uuid",
       "name": "Jollof Rice",
       "category": "lunch",
-      "price_min": 1500,
-      "price_max": 2500,
+      "price_min": "1500",
+      "price_max": "2500",
       "prep_time_mins": 45,
-      "dietary_tags": ["spicy", "popular"]
+      "dietary_tags": "spicy,popular",
+      "instructions": "Cook rice with tomato base."
     }
   ]
 }
@@ -158,10 +319,7 @@ Success response:
 
 ### `POST /meals-plan/generate`
 
-> [!NOTE]
-> There is also an alternative/duplicate endpoint implemented at `POST /api/meal-plans/generate`.
-
-Creates a new active meal plan for the authenticated user and inserts the selected meal items.
+Creates a new active meal plan for the authenticated user.
 
 Request body:
 
@@ -172,15 +330,16 @@ Request body:
       "meal_id": "meal-uuid-1",
       "day_of_week": "monday",
       "meal_slot": "breakfast"
-    },
-    {
-      "meal_id": "meal-uuid-2",
-      "day_of_week": "monday",
-      "meal_slot": "lunch"
     }
   ]
 }
 ```
+
+Current implementation note:
+
+- The route validates that `items` is a non-empty array.
+- It currently creates only the parent `meal_plans` record and returns that record.
+- It does not currently persist `meal_plan_items`.
 
 Success response:
 
@@ -191,30 +350,24 @@ Success response:
   "data": {
     "id": "plan-uuid",
     "user_id": "user-uuid",
-    "status": "active",
-    "meal_plan_items": [
-      {
-        "id": "item-uuid",
-        "day_of_week": "monday",
-        "meal_slot": "breakfast",
-        "meals": {
-          "id": "meal-uuid-1",
-          "name": "Yam and Egg",
-          "category": "breakfast",
-          "price_min": 1000,
-          "price_max": 1500,
-          "prep_time_mins": 20,
-          "dietary_tags": ["protein"]
-        }
-      }
-    ]
+    "status": "active"
   }
 }
 ```
 
+Error responses:
+
+- `400` if `items` is missing or empty.
+- `500` on server failure.
+
 ### `GET /meals-plan/:id`
 
-Retrieves a specific meal plan by its ID, including all its meal items. Users can only fetch their own plans.
+Fetches a meal plan by ID for the current user.
+
+Current implementation note:
+
+- This route returns only the `meal_plans` row.
+- It does not include related `meal_plan_items` or meal details.
 
 Success response:
 
@@ -225,137 +378,156 @@ Success response:
   "data": {
     "id": "plan-uuid",
     "user_id": "user-uuid",
-    "status": "active",
-    "meal_plan_items": [
-      {
-        "id": "item-uuid",
-        "day_of_week": "monday",
-        "meal_slot": "breakfast",
-        "meals": {
-          "id": "meal-uuid",
-          "name": "Yam and Egg",
-          "category": "breakfast",
-          "price_min": 1000,
-          "price_max": 1500,
-          "prep_time_mins": 20,
-          "dietary_tags": ["protein"],
-          "instructions": "Preparation instructions"
-        }
-      }
-    ]
+    "status": "active"
   }
 }
 ```
 
-### `GET /ingredients/:planId`
+Error responses:
 
-> [!WARNING]
-> This route is documented but **currently not implemented** in the backend code.
+- `404` if the plan is not found.
+- `500` on server failure.
 
-Returns shopping-list ingredients for a meal plan, grouped by market category (e.g., "Produce", "Proteins").
+## Protected Routes Mounted At `/api`
+
+These routes come from [src/routes/onboarding.ts](/home/isaac/Documents/caya/Naija_Eats/backend/src/routes/onboarding.ts:1).
+
+### `POST /api/users/preferences/budget`
+
+Upserts budget preferences for the authenticated user.
+
+Request body:
+
+```json
+{
+  "budgetTier": "Standard",
+  "budgetValue": "7000-10000",
+  "frequency": "Weekly",
+  "fluctuationBuffer": "10%"
+}
+```
 
 Success response:
 
 ```json
 {
   "success": true,
-  "message": "Ingredients retrieved successfully",
-  "data": {
-    "plan_id": "plan-uuid",
-    "sections": {
-      "Produce": [
-        {
-          "id": "item-uuid",
-          "meal_plan_id": "plan-uuid",
-          "name": "Tomatoes",
-          "quantity": "6 large",
-          "category": "Produce"
-        }
-      ],
-      "Proteins": [
-        {
-          "id": "item-uuid",
-          "meal_plan_id": "plan-uuid",
-          "name": "Chicken",
-          "quantity": "1kg",
-          "category": "Proteins"
-        }
-      ]
-    }
-  }
-}
-```
-
-## Onboarding / API Routes
-
-The routes below are mounted under `/api` and also require a Bearer token.
-
-### `POST /api/users/preferences/budget`
-
-Saves or updates the user's budget preferences.
-
-Request body:
-
-```json
-{
-  "budgetTier": "standard",
-  "budgetValue": 45000,
-  "frequency": "weekly",
-  "fluctuationBuffer": 5000
+  "message": "Budget preferences saved successfully"
 }
 ```
 
 ### `POST /api/users/preferences/frequency`
 
-Saves or updates the user's household profile and cooking frequency preferences.
+Upserts household and cooking-frequency preferences.
 
 Request body:
 
 ```json
 {
-  "householdSize": 4,
-  "dailyMeals": 3,
+  "householdSize": "1",
+  "dailyMeals": "3",
   "includeDesserts": false,
-  "cookingFrequencies": "daily"
+  "cookingFrequencies": "Daily (7 Days)"
+}
+```
+
+Success response:
+
+```json
+{
+  "success": true,
+  "message": "Cooking frequency preferences saved successfully"
 }
 ```
 
 ### `POST /api/users/preferences/food`
 
-Saves or updates the user's food preferences, allergies, and dietary tags.
+Replaces saved food preferences, allergies, and dietary tags for the authenticated user.
 
 Request body:
 
 ```json
 {
-  "selectedPreferences": ["high-protein"],
-  "allergies": "peanuts",
-  "dietaryTags": ["halal"]
+  "selectedPreferences": ["African", "Continental"],
+  "allergies": "Peanuts",
+  "dietaryTags": ["Gluten-Free"]
 }
 ```
 
-### `POST /api/meal-plans/generate`
-
-Generates a new active meal plan.
-
-> [!NOTE]
-> This is a duplicate/alternative to the `POST /meals-plan/generate` route.
-
-### `GET /api/meal-plans/current`
-
-Retrieves the currently active meal plan and its budget stats.
-
-### `GET /api/meal-plans/current/details`
-
-Retrieves detailed breakdown of the current meal plan.
-
-## Error Response Shape
-
-Errors use the shared helper in `src/utils/helper.ts`:
+Success response:
 
 ```json
 {
-  "success": false,
-  "message": "Error message"
+  "success": true,
+  "message": "Food preferences saved successfully"
+}
+```
+
+Implementation note:
+
+- `allergies` is currently stored as a single string in one `user_allergies` row in this route.
+- That differs from `POST /preference`, which accepts an array and creates multiple allergy rows.
+
+### `POST /api/meal-plans/generate`
+
+Creates an active meal plan and returns its ID.
+
+Success response:
+
+```json
+{
+  "success": true,
+  "message": "Meal plan generated successfully",
+  "data": {
+    "planId": "plan-uuid"
+  }
+}
+```
+
+### `GET /api/meal-plans/current`
+
+Returns the current active plan summary.
+
+Current implementation note:
+
+- The route checks whether an active plan exists for the authenticated user.
+- If one exists, it returns a static `budgetStats` object rather than database-derived statistics.
+
+Success response:
+
+```json
+{
+  "success": true,
+  "message": "Meal plan retrieved successfully",
+  "data": {
+    "budgetStats": {
+      "weeklyBudget": "₦45,000",
+      "totalMeals": 21,
+      "prepTimeAvg": "35 Mins"
+    }
+  }
+}
+```
+
+Error responses:
+
+- `404` if no active plan exists.
+- `500` on server failure.
+
+### `GET /api/meal-plans/current/details`
+
+Placeholder endpoint for current meal-plan details.
+
+Current implementation note:
+
+- The route currently returns an empty object.
+
+Success response:
+
+```json
+{
+  "success": true,
+  "message": "Meal plan details retrieved successfully",
+  "data": {}
 }
 ```

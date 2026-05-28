@@ -1,16 +1,16 @@
 # Setup Guide
 
-This project runs on Bun with an Express API server, Prisma ORM, and PostgreSQL.
+This backend runs on Bun with Express, Prisma, and PostgreSQL.
 
 ## Requirements
 
-- Bun installed locally.
-- A PostgreSQL database (local or hosted).
-- `curl` and `jq` if you want to run the smoke-test scripts.
+- Bun installed locally
+- A PostgreSQL database
+- A Resend API key for email delivery in auth flows
 
 ## Installation
 
-Install dependencies from the backend directory:
+From the backend directory:
 
 ```bash
 bun install
@@ -22,63 +22,68 @@ Create a local environment file:
 cp .env.example .env
 ```
 
-Update `.env` with your database connection and secrets:
+Set these variables:
 
 ```env
 DATABASE_URL="postgresql://user:password@localhost:5432/naija_eats"
 JWT_SECRET="your-secure-jwt-secret"
+RESEND_API_KEY="re_your_api_key"
+FRONTEND_URL="http://localhost:5173"
+BACKEND_URL="http://localhost:3000"
 PORT=3000
+NODE_ENV=development
 ```
+
+Variable notes:
+
+- `DATABASE_URL`: PostgreSQL connection string used by Prisma.
+- `JWT_SECRET`: secret used to sign and verify auth tokens.
+- `RESEND_API_KEY`: required for registration verification and password-reset emails.
+- `FRONTEND_URL`: base URL used for redirects after email verification and reset-token validation.
+- `BACKEND_URL`: base URL used inside email links.
 
 ## Database Setup
 
-The project uses Prisma to manage the database schema.
-
-### 1. Initialize the Database
-
-Run migrations to create the tables in your PostgreSQL instance:
+Run migrations:
 
 ```bash
-bun x prisma migrate dev --name init
+bun x prisma migrate dev
 ```
 
-### 2. Generate Prisma Client
+Generate the Prisma client if needed:
 
 ```bash
 bun x prisma generate
 ```
 
-## Data Model (Prisma)
+The data model in [prisma/schema.prisma](/home/isaac/Documents/caya/Naija_Eats/backend/prisma/schema.prisma:1) includes:
 
-The backend defines the following models in `prisma/schema.prisma`:
-
-- `User`: Core user account (email, hashed password, phone).
-- `Profile`: Extended user info (full name, avatar).
-- `budgets`: User financial preferences.
-- `household_profiles`: Family size and cooking frequency.
-- `user_preferences` / `user_allergies`: Dietary constraints.
-- `meals`: Catalogue of available meals.
-- `meal_plans`: Grouped meal planning sessions.
-- `meal_plan_items`: Individual meal assignments within a plan.
-- `shopping_list_items`: Ingredients for the market.
+- `User` and `Profile`
+- `budgets`
+- `household_profiles`
+- `user_preferences`
+- `user_allergies`
+- `dietary_tags`
+- `meals`
+- `meal_plans`
+- `meal_plan_items`
+- `shopping_list_items`
 
 ## Running The Server
 
-Start the server with file watching:
+Development:
 
 ```bash
 bun run dev
 ```
 
-Start the server without file watching:
+Production-style local run:
 
 ```bash
 bun run start
 ```
 
-By default, the API runs on port `3000` unless `PORT` is set.
-
-Check the running server:
+Health check:
 
 ```bash
 curl http://localhost:3000/health
@@ -86,46 +91,25 @@ curl http://localhost:3000/health
 
 ## Authentication Flow
 
-1. A user registers with `POST /auth/register`.
-2. A user logs in with `POST /auth/login`.
-3. The login response includes a JWT access token.
-4. Protected routes require the token in the `Authorization` header:
+1. Register with `POST /auth/register`.
+2. Open the email verification link sent by the backend.
+3. Log in with `POST /auth/login` after verification.
+4. Use the returned JWT in the `Authorization` header for protected routes.
+
+Example header:
 
 ```http
 Authorization: Bearer <jwt_token>
 ```
 
-The `authMiddleware` in `src/middleware/auth.ts` handles token verification and user context attachment.
+## Route Groups
 
-## Smoke Testing
+- `/auth`: registration, email verification, login, resend verification, forgot password, password reset
+- `/`: protected preference, meals, and meal-plan routes from `src/routes/meals.ts`
+- `/api`: protected onboarding and alternate meal-plan routes from `src/routes/onboarding.ts`
 
-With the API running, you can run the smoke tests:
+## Behavioral Notes
 
-```bash
-./test.sh http://localhost:3000
-```
-
-The script exercises health, auth, and protected routes. It requires `jq` installed locally.
-
-## Response Shape
-
-Most routes use the shared `_res` helper in `src/utils/helper.ts`.
-
-Success responses follow this shape:
-
-```json
-{
-  "success": true,
-  "message": "Request completed successfully",
-  "data": {}
-}
-```
-
-Error responses follow this shape:
-
-```json
-{
-  "success": false,
-  "message": "Error message"
-}
-```
+- Email verification is required before login succeeds.
+- Some route families overlap in purpose. For example, both `POST /preference` and the `/api/users/preferences/*` routes write onboarding-related data.
+- Some meal-plan endpoints are partial implementations today and return limited data. See [docs/api.md](/home/isaac/Documents/caya/Naija_Eats/backend/docs/api.md:1) for the exact current behavior.
