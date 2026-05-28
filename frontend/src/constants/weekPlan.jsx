@@ -15,6 +15,8 @@ export const WeekPlan = [
       {
         type: "BREAKFAST",
         name: "Bread & Egg",
+        description: "Soft bread served with lightly fried eggs.",
+        ingredients: ["Bread", "Egg", "Vegetable Oil", "Salt"],
         price: "₦700",
         icon: <SnackIcon className="text-text-primary" />,
         image: "/images/bread_scrambled_egg.jpg",
@@ -22,6 +24,16 @@ export const WeekPlan = [
       {
         type: "LUNCH",
         name: "Jollof Rice & Grilled Fish",
+        description: "Smoky jollof rice paired with seasoned grilled fish.",
+        ingredients: [
+          "Rice",
+          "Tomatoes",
+          "Pepper",
+          "Onions",
+          "Fish",
+          "Vegetable Oil",
+          "Seasoning Cubes",
+        ],
         price: "₦1,600",
         icon: <BurgerIcon className="text-accent-orange" />,
         image: "/images/jollof_fish_plantains.png",
@@ -29,12 +41,15 @@ export const WeekPlan = [
       {
         type: "DINNER",
         name: "Garri & Groundnut",
+        description: "Simple soaked garri served with crunchy groundnuts.",
+        ingredients: ["Garri", "Groundnut", "Sugar", "Water"],
         price: "₦400",
         icon: <ForkAndKnife className="text-text-primary" />,
         image: "/images/dish.webp",
       },
     ],
   },
+
   {
     day: "Monday",
     color: "bg-orange-800",
@@ -42,6 +57,8 @@ export const WeekPlan = [
       {
         type: "BREAKFAST",
         name: "Toast & Tea",
+        description: "Buttered toast with warm sweet tea.",
+        ingredients: ["Bread", "Tea Leaves", "Sugar", "Milk"],
         price: "₦600",
         icon: <CoffeeIcon className="text-text-primary" />,
         image: "/images/tea-bread-small-image.png",
@@ -49,6 +66,8 @@ export const WeekPlan = [
       {
         type: "LUNCH",
         name: "Beans & Fried Plantain",
+        description: "Hearty beans served with sweet fried plantains.",
+        ingredients: ["Beans", "Plantain", "Palm Oil", "Salt"],
         price: "₦900",
         icon: <BurgerIcon className="text-accent-orange" />,
         image: "/images/plantain.jpg",
@@ -56,12 +75,15 @@ export const WeekPlan = [
       {
         type: "DINNER",
         name: "Indomie & Egg",
+        description: "Quick noodles tossed with scrambled eggs.",
+        ingredients: ["Instant Noodles", "Egg", "Onions", "Vegetable Oil"],
         price: "₦700",
         icon: <SpagIcon className="text-text-primary" />,
         image: "/images/dish.webp",
       },
     ],
   },
+
   {
     day: "Tuesday",
     color: "bg-green-900",
@@ -69,13 +91,17 @@ export const WeekPlan = [
       {
         type: "BREAKFAST",
         name: "Pap & Akara",
+        description: "Smooth pap served with crispy bean cakes.",
+        ingredients: ["Corn Flour", "Beans", "Palm Oil", "Onions", "Pepper"],
         price: "₦700",
         icon: <SnackIcon className="text-text-primary" />,
         image: "/images/dish.webp",
       },
       {
         type: "LUNCH",
-        name: "Simple Beef Suya & Bread",
+        name: "Beef Suya & Bread",
+        description: "Spiced grilled beef suya served with fresh bread.",
+        ingredients: ["Beef", "Suya Spice", "Bread", "Onions"],
         price: "₦1,100",
         icon: <UtensilsIcon className="text-accent-orange" />,
         image: "/images/beef_suya.png",
@@ -83,12 +109,22 @@ export const WeekPlan = [
       {
         type: "DINNER",
         name: "Rice & Stew",
+        description: "Classic rice served with rich tomato stew.",
+        ingredients: [
+          "Rice",
+          "Tomatoes",
+          "Pepper",
+          "Onions",
+          "Vegetable Oil",
+          "Seasoning Cubes",
+        ],
         price: "₦650",
         icon: <ForkAndKnife className="text-text-primary" />,
         image: "/images/dish.webp",
       },
     ],
   },
+
   {
     day: "Wednesday",
     color: "bg-green-800",
@@ -96,6 +132,8 @@ export const WeekPlan = [
       {
         type: "BREAKFAST",
         name: "Bread & Tea",
+        description: "Light breakfast of bread and warm tea.",
+        ingredients: ["Bread", "Tea Leaves", "Sugar", "Milk"],
         price: "₦500",
         icon: <CoffeeIcon className="text-text-primary" />,
         image: "/images/tea-bread-small-image.png",
@@ -103,6 +141,15 @@ export const WeekPlan = [
       {
         type: "LUNCH",
         name: "Egusi & Pounded Yam",
+        description: "Rich melon soup served with soft pounded yam.",
+        ingredients: [
+          "Melon Seeds",
+          "Yam",
+          "Spinach",
+          "Palm Oil",
+          "Crayfish",
+          "Pepper",
+        ],
         price: "₦1,400",
         icon: <UtensilsIcon className="text-accent-orange" />,
         image: "/images/swallow_egusi.png",
@@ -110,12 +157,22 @@ export const WeekPlan = [
       {
         type: "DINNER",
         name: "Fried Yam & Egg Sauce",
+        description: "Crispy fried yam served with spicy egg sauce.",
+        ingredients: [
+          "Yam",
+          "Egg",
+          "Tomatoes",
+          "Pepper",
+          "Onions",
+          "Vegetable Oil",
+        ],
         price: "₦900",
         icon: <ForkAndKnife className="text-text-primary" />,
         image: "/images/dish.webp",
       },
     ],
   },
+
   {
     day: "Thursday",
     color: "bg-orange-900",
@@ -123,6 +180,8 @@ export const WeekPlan = [
       {
         type: "BREAKFAST",
         name: "Moi Moi & Custard",
+        description: "Steamed bean pudding served with sweet custard.",
+        ingredients: ["Beans", "Corn Flour", "Sugar", "Milk", "Palm Oil"],
         price: "₦800",
         icon: <SnackIcon className="text-text-primary" />,
         image: "/images/dish.webp",
@@ -130,6 +189,14 @@ export const WeekPlan = [
       {
         type: "LUNCH",
         name: "Amala & Ewedu",
+        description: "Soft amala served with jute leaf soup.",
+        ingredients: [
+          "Yam Flour",
+          "Jute Leaves",
+          "Locust Beans",
+          "Crayfish",
+          "Pepper",
+        ],
         price: "₦1,500",
         icon: <UtensilsIcon className="text-accent-orange" />,
         image: "/images/dish.webp",
@@ -137,12 +204,15 @@ export const WeekPlan = [
       {
         type: "DINNER",
         name: "Grilled Chicken & Fries",
+        description: "Grilled chicken served with crispy potato fries.",
+        ingredients: ["Chicken", "Potatoes", "Vegetable Oil", "Spices", "Salt"],
         price: "₦1,800",
         icon: <BurgerIcon className="text-text-primary" />,
         image: "/images/dish.webp",
       },
     ],
   },
+
   {
     day: "Friday",
     color: "bg-green-700",
@@ -150,6 +220,8 @@ export const WeekPlan = [
       {
         type: "BREAKFAST",
         name: "Akara & Ogi",
+        description: "Crispy bean cakes served with smooth pap.",
+        ingredients: ["Beans", "Corn Flour", "Palm Oil", "Sugar"],
         price: "₦600",
         icon: <SnackIcon className="text-text-primary" />,
         image: "/images/dish.webp",
@@ -157,19 +229,37 @@ export const WeekPlan = [
       {
         type: "LUNCH",
         name: "Eba & Okra Soup",
+        description: "Cassava swallow served with okra soup.",
+        ingredients: [
+          "Cassava Flour",
+          "Okra",
+          "Palm Oil",
+          "Crayfish",
+          "Fish",
+          "Pepper",
+        ],
         price: "₦1,300",
         icon: <UtensilsIcon className="text-accent-orange" />,
         image: "/images/okra.jpg",
       },
       {
         type: "DINNER",
-        name: "Suya & Cold Zobo",
+        name: "Suya & Zobo",
+        description: "Spiced beef suya served with chilled hibiscus drink.",
+        ingredients: [
+          "Beef",
+          "Suya Spice",
+          "Hibiscus Leaves",
+          "Ginger",
+          "Sugar",
+        ],
         price: "₦1,200",
         icon: <ForkAndKnife className="text-text-primary" />,
         image: "/images/beef_suya.png",
       },
     ],
   },
+
   {
     day: "Saturday",
     color: "bg-orange-700",
@@ -177,6 +267,15 @@ export const WeekPlan = [
       {
         type: "BREAKFAST",
         name: "Pancakes & Coffee",
+        description: "Fluffy pancakes served with hot coffee.",
+        ingredients: [
+          "Flour",
+          "Egg",
+          "Milk",
+          "Sugar",
+          "Butter",
+          "Coffee Beans",
+        ],
         price: "₦1,000",
         icon: <CoffeeIcon className="text-text-primary" />,
         image: "/images/dish.webp",
@@ -184,6 +283,15 @@ export const WeekPlan = [
       {
         type: "LUNCH",
         name: "Native Rice & Ponmo",
+        description: "Local rice cooked with cow skin and spices.",
+        ingredients: [
+          "Rice",
+          "Cow Skin",
+          "Palm Oil",
+          "Pepper",
+          "Onions",
+          "Seasoning Cubes",
+        ],
         price: "₦1,100",
         icon: <BurgerIcon className="text-accent-orange" />,
         image: "/images/dish.webp",
@@ -191,6 +299,8 @@ export const WeekPlan = [
       {
         type: "DINNER",
         name: "Fish Pepper Soup",
+        description: "Light spicy fish soup with aromatic herbs.",
+        ingredients: ["Fish", "Pepper", "Ginger", "Garlic", "Scent Leaves"],
         price: "₦1,500",
         icon: <SpagIcon className="text-text-primary" />,
         image: "/images/fisherman_soup.png",

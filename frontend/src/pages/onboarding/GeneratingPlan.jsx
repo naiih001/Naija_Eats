@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { MealIcon } from "../../constants/icons";
 import { preferencesService } from "../../services/preferences.api";
 import Button from "../../components/ui/Button";
 
 const GeneratingPlan = () => {
   const [currentStep, setCurrentStep] = useState(1);
-  const [error, setError] = useState(null);
+  const [hasError, setHasError] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -54,8 +55,8 @@ const GeneratingPlan = () => {
           allergies: preferencesData.allergies || [],
         };
 
-        await preferencesService.savePreferences(payload);
-
+        await preferencesService.generateMealPlans(payload);
+        toast.success("Meal plan generated successfully!");
         // to clean up all the stored items in user's localStorage
         localStorage.removeItem("onboarding_budget");
         localStorage.removeItem("onboarding_frequency");
@@ -78,11 +79,11 @@ const GeneratingPlan = () => {
         };
       } catch (err) {
         console.error("Failed to save preferences during onboarding:", err);
-        setError(
-          "Sign in to genrate your meal plan",
-          // ||
-          //   "Unable to save your preferences. Please check your connection and try again.",
+        toast.error(
+          "We couldn't generate your meal plan. Please sign in or try again.",
         );
+
+        setHasError(true);
       }
     };
 
@@ -102,21 +103,21 @@ const GeneratingPlan = () => {
           <div className="absolute inset-0 rounded-full border-[5px] border-transparent border-t-[#c6d7bc] animate-[spin_2s_linear_infinite]"></div>
           <div className="absolute inset-3 rounded-full border-[3px] border-accent-orange/10"></div>
           <div className="absolute inset-3 rounded-full border-[3px] border-transparent border-r-accent-orange/40 animate-[spin_3s_linear_infinite_reverse]"></div>
-          <div className="absolute inset-[22px] rounded-full border border-accent-orange/20"></div>
+          <div className="absolute inset-5.5 rounded-full border border-accent-orange/20"></div>
           {/* // Center Content */}
           <div className="flex flex-col items-center gap-2 mt-2">
             <MealIcon className={"w-15 text-text-primary"} />
             <div className="flex gap-2 mt-1">
               <div
-                className="w-2.5 h-2.5 rounded-full bg-[#a36017] animate-bounce"
+                className="w-2.5 h-2.5 rounded-full bg-accent-orange animate-bounce"
                 style={{ animationDelay: "0ms" }}
               ></div>
               <div
-                className="w-2.5 h-2.5 rounded-full bg-[#a36017] animate-bounce"
+                className="w-2.5 h-2.5 rounded-full bg-accent-orange animate-bounce"
                 style={{ animationDelay: "150ms" }}
               ></div>
               <div
-                className="w-2.5 h-2.5 rounded-full bg-[#a36017] animate-bounce"
+                className="w-2.5 h-2.5 rounded-full bg-accent-orange animate-bounce"
                 style={{ animationDelay: "300ms" }}
               ></div>
             </div>
@@ -146,7 +147,7 @@ const GeneratingPlan = () => {
         </div>
       </>
 
-      {error ? (
+      {hasError ? (
         <div className="w-full p-6 bg-red-50 border border-red-100 rounded-2xl flex flex-col items-center gap-4 animate-in fade-in zoom-in duration-300">
           <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center text-red-600">
             <svg
@@ -164,7 +165,9 @@ const GeneratingPlan = () => {
               <line x1="12" y1="16" x2="12.01" y2="16" />
             </svg>
           </div>
-          <p className="text-sm font-bold text-red-800 text-center">{error}</p>
+          <p className="text-sm font-bold text-red-800 text-center">
+            We couldn't generate your meal plan. Please try again or sign in.
+          </p>
           <Button
             onClick={() =>
               navigate("/sign-in", {
@@ -229,7 +232,7 @@ const GeneratingPlan = () => {
               </span>
             </div>
             <span
-              className={`text-[13px] font-semibold ${currentStep > 1 ? "text-gray-500" : "text-[#a36017]"}`}
+              className={`text-[13px] font-semibold ${currentStep > 1 ? "text-gray-500" : "text-accent-orange"}`}
             >
               {currentStep > 1 ? "Done" : "Active"}
             </span>
@@ -294,7 +297,7 @@ const GeneratingPlan = () => {
               </span>
             </div>
             <span
-              className={`text-[13px] font-semibold ${currentStep > 2 ? "text-gray-500" : currentStep === 2 ? "text-[#a36017]" : "text-gray-400"}`}
+              className={`text-[13px] font-semibold ${currentStep > 2 ? "text-gray-500" : currentStep === 2 ? "text-accent-orange" : "text-gray-400"}`}
             >
               {currentStep > 2
                 ? "Done"
@@ -363,7 +366,7 @@ const GeneratingPlan = () => {
               </span>
             </div>
             <span
-              className={`text-[13px] font-semibold ${currentStep > 3 ? "text-gray-500" : currentStep === 3 ? "text-[#a36017]" : "text-gray-400"}`}
+              className={`text-[13px] font-semibold ${currentStep > 3 ? "text-gray-500" : currentStep === 3 ? "text-accent-orange" : "text-gray-400"}`}
             >
               {currentStep > 3
                 ? "Done"

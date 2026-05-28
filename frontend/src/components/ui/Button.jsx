@@ -13,7 +13,8 @@ const Button = ({
     "py-4 px-6 rounded-xl font-bold text-base transition-all duration-300 flex justify-center items-center gap-2 active:scale-95 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed";
 
   const variants = {
-    primary: "bg-accent-orange text-white hover:bg-orange-600",
+    primary:
+      "border border-accent-orange bg-accent-orange text-white hover:bg-orange-600",
     outline:
       "border border-text-primary text-text-primary hover:bg-text-primary hover:text-white",
     ghost: "text-text-primary hover:bg-text-primary/5",

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
+import { toast } from "sonner";
 import Header from "../../components/ui/Header";
 import Button from "../../components/ui/Button";
 import Footer from "../../components/ui/Footer";
@@ -8,67 +9,76 @@ import { authService } from "../../services/auth.api";
 const SignIn = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const from =
-    location.state?.from ||
-    (localStorage.getItem("onboarded") ? "/" : "/onboarding/set-budget");
+  const from = location.state?.from;
 
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [unverifiedEmail, setUnverifiedEmail] = useState(null);
+  const [resending, setResending] = useState(false);
 
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  });
+  const [formData, setFormData] = useState({ email: "", password: "" });
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleResend = async () => {
+    setResending(true);
+    try {
+      await authService.resendVerification(unverifiedEmail);
+      toast.success("Verification email resent! Check your inbox.");
+    } catch (err) {
+      toast.error(err.message || "Failed to resend. Try again.");
+    } finally {
+      setResending(false);
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-    setError("");
+    setUnverifiedEmail(null);
 
     try {
       await authService.signIn(formData.email, formData.password);
-
-      navigate(from, { replace: true });
+      toast.success("Signed in successfully.");
+      const isOnboarded = localStorage.getItem("onboarded") === "true";
+      navigate(isOnboarded ? from || "/" : "/onboarding/set-budget", {
+        replace: true,
+      });
     } catch (err) {
-      setError(
-        err.message || "An error occurred during sign in. Please try again.",
-      );
+      if (err.status === 403) {
+        setUnverifiedEmail(formData.email);
+      } else {
+        toast.error(err.message || "Invalid email or password.");
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-bg-background">
       <Header />
       <main className="flex-1 h-full flex flex-col p-4 gap-6 lg:grid lg:grid-cols-2 lg:gap-4">
         <div className="relative rounded-xl overflow-hidden h-48 w-full shadow-lg shrink-0 lg:w-full lg:h-full">
           <img
             src="/images/sign-in-hero.webp"
-            alt="Nigerian Jollof Rice"
+            alt="Nigerian food"
             className="w-full h-full object-cover block lg:hidden"
           />
           <img
             src="/images/homepage-desktop-picture.jpeg"
-            alt=""
+            alt="Nigerian food"
             className="w-full h-full object-cover hidden lg:block"
           />
           <div className="absolute inset-0 bg-black/50 flex flex-col items-start justify-center px-4">
-            <h1 className="text-white font-display text-3xl lg:text-[4rem] font-bold text-center tracking-tight lg:text-left leading-tight lg:mb-6">
+            <h1 className="text-white font-display text-3xl lg:text-[4rem] font-bold tracking-tight lg:text-left leading-tight lg:mb-6">
               Heritage Flavors,
-              <br />
-              Modern Convenience.
+              <br /> Modern Convenience.
             </h1>
-            <p className="hidden lg:block text-base text-white font-semibold text-left">
+            <p className="hidden lg:block text-base text-white font-semibold">
               Build a personalized Nigerian meal plan with flavors you love,
               goals you choose, and a weekly rhythm that fits your life.
             </p>
@@ -83,13 +93,27 @@ const SignIn = () => {
             Sign in to explore Nigeria's premium tastes.
           </p>
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm font-medium">
-                {error}
-              </div>
-            )}
+          {/* unverified email banner */}
+          {unverifiedEmail && (
+            <div className="mb-5 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 space-y-1.5">
+              <p className="text-sm font-bold text-amber-800">
+                Email not verified
+              </p>
+              <p className="text-xs text-amber-700">
+                Check your inbox for the verification link sent to{" "}
+                <span className="font-semibold">{unverifiedEmail}</span>
+              </p>
+              <button
+                onClick={handleResend}
+                disabled={resending}
+                className="text-xs font-bold text-accent-orange hover:underline"
+              >
+                {resending ? "Resending..." : "Resend verification email →"}
+              </button>
+            </div>
+          )}
 
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-inter font-bold text-text-primary uppercase tracking-wide">
                 Email Address
@@ -110,12 +134,12 @@ const SignIn = () => {
                 <label className="text-[13px] font-bold font-inter text-text-primary uppercase">
                   Password
                 </label>
-                <a
-                  href="#"
+                <Link
+                  to="/forgot-password"
                   className="text-accent-orange text-sm font-inter font-semibold hover:underline"
                 >
                   Forgot Password?
-                </a>
+                </Link>
               </div>
               <div className="relative">
                 <input
@@ -174,16 +198,16 @@ const SignIn = () => {
             </Button>
 
             <div className="flex items-center gap-4 my-2">
-              <div className="h-px bg-text-muted flex-1"></div>
+              <div className="h-px bg-text-muted flex-1" />
               <span className="text-gray-400 text-[13px] font-medium">OR</span>
-              <div className="h-px bg-text-muted flex-1"></div>
+              <div className="h-px bg-text-muted flex-1" />
             </div>
 
             <Button
               variant="outline"
               type="button"
               className="w-full"
-              onClick={() => navigate("/onboarding/welcome")}
+              onClick={() => navigate("/onboarding/set-budget")}
             >
               Continue as Guest
             </Button>
@@ -203,7 +227,6 @@ const SignIn = () => {
           </form>
         </div>
       </main>
-
       <Footer />
     </div>
   );

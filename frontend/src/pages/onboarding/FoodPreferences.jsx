@@ -1,23 +1,28 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import OnboardingLayout from "../../components/layout/OnboardingLayout";
+import { toast } from "sonner";
 import {
   RhombusAlertIcon,
   CircleAlertIcon,
   CloseIcon,
   PlusIcon,
 } from "../../constants/icons";
-import { useNavigate } from "react-router-dom";
 import { Preferences } from "../../constants/preferences";
+import { preferencesService } from "../../services/preferences.api";
+
+const DEFAULT_DIETARY_TAGS = [
+  { label: "Gluten-Free", active: true },
+  { label: "Lactose-Intolerant", active: true },
+  { label: "Nut-Free", active: false },
+];
 
 const FoodPreferences = () => {
   const navigate = useNavigate();
   const [selectedPrefs, setSelectedPrefs] = useState([]);
   const [allergyInput, setAllergyInput] = useState("");
-  const [dietaryTags, setDietaryTags] = useState([
-    { label: "Gluten-Free", active: true },
-    { label: "Lactose-Intolerant", active: true },
-    { label: "Nut-Free", active: false },
-  ]);
+  const [dietaryTags, setDietaryTags] = useState(DEFAULT_DIETARY_TAGS);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleTogglePref = (id) => {
     setSelectedPrefs((prev) =>
@@ -31,26 +36,60 @@ const FoodPreferences = () => {
     );
   };
 
+  const handleNext = async () => {
+    if (selectedPrefs.length === 0) {
+      toast.error("Please select at least one food preference.");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    // build the single payload the backend expects
+    const payload = {
+      selectedPreferences: selectedPrefs.map((id) => Preferences[id].category),
+      allergies: allergyInput.trim()
+        ? allergyInput
+            .split(",")
+            .map((a) => a.trim())
+            .filter(Boolean)
+            .join(", ")
+        : "",
+      dietaryTags: dietaryTags
+        .filter((tag) => tag.active)
+        .map((tag) => tag.label),
+    };
+
+    try {
+      await preferencesService.saveFoodPreferences(payload);
+
+      toast.success("Your food preferences were saved successfully.");
+
+      // clean up localStorage after successful save
+      localStorage.removeItem("onboarding_budget");
+      localStorage.removeItem("onboarding_frequency");
+      localStorage.setItem("onboarded", "true");
+
+      navigate("/onboarding/generating-plan");
+    } catch (err) {
+      console.error(
+        err?.message || "An error occurred while saving preferences.",
+      );
+      toast.error("We couldn't save your food preferences. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <OnboardingLayout
       step={3}
       totalSteps={3}
       label="Preferences"
       prevTo="/onboarding/cooking-frequency"
-      onNext={() => {
-        const data = {
-          preferences: selectedPrefs.map((id) => Preferences[id].category),
-          allergies: allergyInput
-            .split(",")
-            .map((s) => s.trim())
-            .filter((s) => s !== ""),
-        };
-        localStorage.setItem("onboarding_preferences", JSON.stringify(data));
-        navigate("/onboarding/generating-plan");
-      }}
-      nextLabel="Generate Your Plan"
+      onNext={handleNext}
+      nextButtonDisabled={isSubmitting}
+      nextLabel={isSubmitting ? "Saving..." : "Generate Plan"}
     >
-      {/* Title */}
       <h1 className="text-[28px] font-bold leading-tight mb-2">
         What do you enjoy eating?
       </h1>
@@ -58,34 +97,48 @@ const FoodPreferences = () => {
         Tell your flavour so we can help curate the best experience for you!
       </p>
 
-      {/* Food Category Grid */}
+      {/* food category grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
         {Preferences.map((pref, id) => (
           <button
             key={id}
             onClick={() => handleTogglePref(id)}
-            className="group relative rounded-2xl overflow-hidden h-36 cursor-pointer transition-all duration-300 "
+            className="group relative rounded-2xl overflow-hidden h-36 cursor-pointer transition-all duration-300"
           >
             <img
               src={pref.image}
               alt={pref.category}
               className="w-full h-full object-cover"
             />
-            {/* Overlay */}
             <div
-              className={` transition-all absolute inset-0 ${selectedPrefs.includes(id) ? "bg-text-primary/70 group-hover:bg-text-primary/70" : "bg-none group-hover:bg-white/50"}`}
-            ></div>
-            {/* Icon + Label */}
+              className={`transition-all absolute inset-0 ${
+                selectedPrefs.includes(id)
+                  ? "bg-text-primary/70 group-hover:bg-text-primary/70"
+                  : "bg-none group-hover:bg-white/50"
+              }`}
+            />
             <div
-              className={`group-hover:bottom-2 transition-all w-[90%] absolute -bottom-20 h-20 left-1/2 -translate-x-1/2 right-0 flex flex-col items-center justify-center gap-2  py-1 px-2 rounded-sm ${selectedPrefs.includes(id) ? "bottom-2 bg-text-primary/75 text-white" : "-bottom-20 bg-white group-hover:bg-white "}`}
+              className={`group-hover:bottom-2 transition-all w-[90%] absolute -bottom-20 h-20 left-1/2 -translate-x-1/2 right-0 flex flex-col items-center justify-center gap-2 py-1 px-2 rounded-sm ${
+                selectedPrefs.includes(id)
+                  ? "bottom-2 bg-text-primary/75 text-white"
+                  : "-bottom-20 bg-white group-hover:bg-white"
+              }`}
             >
               <span
-                className={`text-lg  drop-shadow-md ${selectedPrefs.includes(id) ? "text-white" : "text-accent-orange"}`}
+                className={`text-lg drop-shadow-md ${
+                  selectedPrefs.includes(id)
+                    ? "text-white"
+                    : "text-accent-orange"
+                }`}
               >
                 {pref.icon}
               </span>
               <span
-                className={`${selectedPrefs.includes(id) ? "text-white" : "text-text-primary"} text-xs font-bold leading-tight drop-shadow-md`}
+                className={`text-xs font-bold leading-tight drop-shadow-md ${
+                  selectedPrefs.includes(id)
+                    ? "text-white"
+                    : "text-text-primary"
+                }`}
               >
                 {pref.category}
               </span>
@@ -94,7 +147,7 @@ const FoodPreferences = () => {
         ))}
       </div>
 
-      {/* Dietary Requirements Section */}
+      {/* dietary requirements */}
       <div className="mb-3">
         <div className="flex items-center gap-2 mb-3">
           <RhombusAlertIcon className={"text-lg text-accent-orange"} />
@@ -103,7 +156,6 @@ const FoodPreferences = () => {
 
         <p className="text-sm font-medium mb-3">Do you have any allergies?</p>
 
-        {/* Allergy Input */}
         <div className="relative mb-4">
           <textarea
             value={allergyInput}
@@ -123,7 +175,7 @@ const FoodPreferences = () => {
               onClick={() => handleToggleTag(id)}
               className={`py-2 px-4 rounded-sm text-xs font-semibold transition-all duration-300 flex items-center gap-1.5 cursor-pointer ${
                 tag.active
-                  ? "bg-text-primary/20 text-text-primary border "
+                  ? "bg-text-primary/20 text-text-primary border"
                   : "bg-white/50 text-body border border-body/20"
               }`}
             >

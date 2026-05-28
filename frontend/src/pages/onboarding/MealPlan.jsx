@@ -1,4 +1,4 @@
-// import React from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Button from "../../components/ui/Button";
 import {
@@ -8,16 +8,20 @@ import {
   StopWatch,
   BoltIcon,
 } from "../../constants/icons";
-// import HomePageLayout from "../layout/HomePageLayout";
+
 import {
   budgetStats,
   featuredMeal,
   subMeals,
   weeklyMeals,
 } from "../../constants/mealPlan";
+import { planService } from "../../services/plan.api";
 
 const MealPlan = () => {
   const navigate = useNavigate();
+  const bufferedBudget =
+    JSON.parse(localStorage.getItem("buffered_budget")) || "0";
+  const amount = bufferedBudget?.amount;
 
   const onBoardUser = () => {
     const token = localStorage.getItem("token");
@@ -36,12 +40,24 @@ const MealPlan = () => {
       return;
     }
     // Logic for regenerating plan would go here
-    navigate("/onboarding/generating-plan");
+    navigate("/onboarding/set-budget");
   };
+
+  useEffect(() => {
+    const fetchMealPlan = async () => {
+      try {
+        const data = await planService.getCurrentMealPlan();
+        console.log(data);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchMealPlan();
+  }, []);
 
   return (
     <>
-      <div className="max-w-[1400px] mx-auto px-6 md:px-12">
+      <div className="max-w-350 mx-auto px-6 md:px-12">
         {/* Page Header */}
         <header className="mb-10">
           <h1 className="text-subheading font-display font-bold leading-tight mb-2">
@@ -67,7 +83,7 @@ const MealPlan = () => {
               </p>
 
               <div className="space-y-3">
-                {budgetStats.map((stat, i) => (
+                {budgetStats(amount).map((stat, i) => (
                   <div
                     key={i}
                     className="flex justify-between items-center border-b border-gray-100 pb-4"
@@ -102,7 +118,7 @@ const MealPlan = () => {
               </div>
             </div>
 
-            {/* Nutritional Info Card */}
+            {/* Nutritional Info Card
             <div className="bg-[#2d4a1e] rounded-3xl p-5 text-white shadow-lg overflow-hidden relative">
               <div className="flex flex-col gap-4">
                 <div className="flex items-center gap-2 opacity-80">
@@ -130,7 +146,7 @@ const MealPlan = () => {
                   </div>
                 </div>
               </div>
-            </div>
+            </div> */}
 
             {/* Shopping List Card */}
             <div className="bg-white/50 border-2 border-dashed border-[#2d4a1e]/20 rounded-4xl p-4 text-center flex flex-col items-center">
@@ -140,7 +156,7 @@ const MealPlan = () => {
               <h3 className="text-2xl font-display font-bold mb-2 text-[#2d4a1e]">
                 Shopping List Ready
               </h3>
-              <p className="text-sm text-text-muted mb-6 max-w-[250px] leading-relaxed">
+              <p className="text-sm text-text-muted mb-6 max-w-62.5 leading-relaxed">
                 All ingredients for this week are automatically calculated for
                 your cart.
               </p>

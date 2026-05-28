@@ -69,8 +69,8 @@ export const weeklyMeals = [
     },
 ];
 
-export const budgetStats = [
-    { label: "WEEKLY BUDGET", value: "₦45,000", highlight: true },
-    { label: "TOTAL MEALS", value: "21 Meals" },
+export const budgetStats = (amount) => [
+    { label: "WEEKLY BUDGET", value: `₦ ${amount}`, highlight: true },
+    { label: "TOTAL MEALS", value: "9 Meals" },
     { label: "PREP TIME (AVG)", value: "35 Mins" },
 ];
