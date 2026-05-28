@@ -4,88 +4,124 @@ Backend API for Naija Eats, built with Bun, Express, TypeScript, Prisma, and Pos
 
 ## What It Does
 
-- Handles user registration and login with secure password hashing and JWT authentication.
-- Protects meal and meal-plan routes with bearer-token authentication.
-- Saves onboarding preferences, budget details, household profile data, and allergies.
-- Manages a comprehensive meal catalogue with pricing and dietary information.
-- Provides endpoints for creating, retrieving, and managing user-specific meal plans.
-- Generates categorized shopping lists (ingredients) from active meal plans.
-- Uses shared JSON response helpers for consistent success and error payloads.
+- Registers users with hashed passwords.
+- Requires email verification before login.
+- Issues JWT bearer tokens for protected routes.
+- Stores onboarding preferences, budget details, household profile data, dietary preferences, allergies, and dietary tags.
+- Exposes meal catalogue and meal-plan endpoints for authenticated users.
+- Sends verification and password-reset emails through Resend.
+
+## Stack
+
+- Bun
+- Express
+- TypeScript
+- Prisma
+- PostgreSQL
+- JWT authentication
+- Resend for transactional email
 
 ## Quick Start
 
-### 1. Install Dependencies
+### 1. Install dependencies
 
 ```bash
 bun install
 ```
 
-### 2. Environment Setup
-
-Create a local environment file:
+### 2. Configure environment
 
 ```bash
 cp .env.example .env
 ```
 
-Add your PostgreSQL connection string and secrets:
+Required environment variables:
 
 ```env
 DATABASE_URL="postgresql://user:password@localhost:5432/naija_eats"
 JWT_SECRET="your-secure-jwt-secret"
+RESEND_API_KEY="re_your_api_key"
+FRONTEND_URL="http://localhost:5173"
+BACKEND_URL="http://localhost:3000"
 PORT=3000
+NODE_ENV=development
 ```
 
-### 3. Database Migration
-
-Run Prisma migrations to set up your local database:
+### 3. Run migrations
 
 ```bash
 bun x prisma migrate dev
 ```
 
-### 4. Run the API
+### 4. Start the server
 
 ```bash
 bun run dev
 ```
 
-The server listens on `PORT` from `.env`, or `3000` by default.
+The API listens on `PORT`, defaulting to `3000`.
 
-## Docker
+## Available Scripts
 
-Build and run the image directly:
+- `bun run dev`: start the API with file watching.
+- `bun run start`: start the API once.
+- `./thorough_test.sh`: run the local curl-based test script if your environment has the required tools.
 
-```bash
-docker build -t naija-eats-backend .
-docker run --env-file .env -p 3000:3000 naija-eats-backend
-```
+## Route Overview
 
-## Scripts
+Public routes:
 
-- `bun run dev`: starts the server with file watching.
-- `bun run start`: starts the server once.
-- `./test.sh [BASE_URL]`: runs a curl-based smoke test against a running API. Requires `curl` and `jq`.
-- `./test-live.sh [BASE_URL]`: same live API smoke test script.
+- `GET /health`
+- `POST /auth/register`
+- `GET /auth/verify-email`
+- `POST /auth/login`
+- `POST /auth/resend-verification`
+- `POST /auth/forgot-password`
+- `GET /auth/reset-password`
+- `POST /auth/reset-password`
+
+Protected routes:
+
+- `POST /preference`
+- `GET /meals`
+- `POST /meals-plan/generate`
+- `GET /meals-plan/:id`
+- `POST /api/users/preferences/budget`
+- `POST /api/users/preferences/frequency`
+- `POST /api/users/preferences/food`
+- `POST /api/meal-plans/generate`
+- `GET /api/meal-plans/current`
+- `GET /api/meal-plans/current/details`
+
+## Important Notes
+
+- `POST /auth/register` creates the user and sends a verification email, but does not return a JWT.
+- `GET /auth/verify-email` and `GET /auth/reset-password` redirect to the frontend instead of returning JSON.
+- `POST /meals-plan/generate` accepts an `items` array, but the current implementation only creates the parent meal plan record.
+- `GET /api/meal-plans/current` currently returns hard-coded `budgetStats` when an active plan exists.
+- `GET /api/meal-plans/current/details` currently returns an empty object.
 
 ## Documentation
 
 - [Setup guide](docs/setup.md)
 - [API reference](docs/api.md)
+- [API examples](docs/api_examples.md)
 
 ## Project Structure
 
 ```text
+docs/
+  api.md
+  api_examples.md
+  setup.md
 prisma/
-  schema.prisma          Prisma schema definition
-  migrations/            Database migration history
+  schema.prisma
+  migrations/
 src/
-  app.ts                 Express app, middleware, and route mounting
-  server.ts              Runtime entry point
-  config/prisma.ts       Prisma client configuration
-  middleware/auth.ts     JWT authentication middleware
-  routes/auth.ts         Registration and login routes (Local Auth)
-  routes/meals.ts        Meal catalogue and meal-plan routes
-  routes/onboarding.ts   Preference and onboarding routes
-  utils/helper.ts        Shared response helpers
+  app.ts
+  server.ts
+  config/
+  middleware/
+  routes/
+  utils/
 ```

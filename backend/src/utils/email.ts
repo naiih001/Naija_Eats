@@ -1,14 +1,18 @@
-import { resend } from '../config/resend';
+import transporter from "../config/mail";
+
+const FROM_EMAIL =
+  process.env.EMAIL_FROM || "Naija Eats <naija-eats@no-reply.com>";
 
 export const sendVerificationEmail = async (email: string, token: string) => {
-  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-  const verificationUrl = `${frontendUrl}/verify-email?token=${token}`;
+  const backendUrl = process.env.BACKEND_URL || 'http://localhost:3000';
+  const verificationUrl = `${backendUrl}/auth/verify-email/${token}`;
+
 
   try {
-    const { data, error } = await resend.emails.send({
-      from: 'Naija Eats <onboarding@resend.dev>',
+    const info = await transporter.sendMail({
+      from: FROM_EMAIL,
       to: email,
-      subject: 'Verify your email address',
+      subject: "Verify your email address",
       html: `
         <h1>Welcome to Naija Eats!</h1>
         <p>Please verify your email address by clicking the link below:</p>
@@ -18,27 +22,22 @@ export const sendVerificationEmail = async (email: string, token: string) => {
       `,
     });
 
-    if (error) {
-      console.error('Error sending verification email:', error);
-      return { success: false, error };
-    }
-
-    return { success: true, data };
+    return { success: true, data: info };
   } catch (err) {
-    console.error('Exception sending verification email:', err);
+    console.error("Exception sending verification email:", err);
     return { success: false, error: err };
   }
 };
 
 export const sendPasswordResetEmail = async (email: string, token: string) => {
-  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+  const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
   const resetUrl = `${frontendUrl}/reset-password?token=${token}`;
 
   try {
-    const { data, error } = await resend.emails.send({
-      from: 'Naija Eats <onboarding@resend.dev>',
+    const info = await transporter.sendMail({
+      from: FROM_EMAIL,
       to: email,
-      subject: 'Reset your password',
+      subject: "Reset your password",
       html: `
         <h1>Password Reset Request</h1>
         <p>You requested to reset your password. Click the link below to set a new one:</p>
@@ -48,14 +47,9 @@ export const sendPasswordResetEmail = async (email: string, token: string) => {
       `,
     });
 
-    if (error) {
-      console.error('Error sending password reset email:', error);
-      return { success: false, error };
-    }
-
-    return { success: true, data };
+    return { success: true, data: info };
   } catch (err) {
-    console.error('Exception sending password reset email:', err);
+    console.error("Exception sending password reset email:", err);
     return { success: false, error: err };
   }
 };
