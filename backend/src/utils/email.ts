@@ -11,7 +11,7 @@ emailjs.init({
 });
 
 const EMAILJS_SERVICE_ID = "service_t4xoffb";
-const EMAILJS_TEMPLATE_ID_VERIFY = "template_867634j";
+const EMAILJS_TEMPLATE_ID_VERIFY = "template_ysohwva";
 const EMAILJS_TEMPLATE_ID_RESET = "template_867634j";
 
 export const sendVerificationEmail = async (email: string, token: string) => {
