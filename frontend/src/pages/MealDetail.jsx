@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   HeartIcon,
@@ -7,7 +6,7 @@ import {
   ChevronRightIcon,
   SpiceIcon,
 } from "../constants/icons";
-import Button from "../components/ui/Button";
+// import Button from "../components/ui/Button";
 import { WeekPlan } from "../constants/weekPlan";
 import { MEAL_DETAILS } from "../constants/mealDetails";
 import MealDetailsTabs from "../components/ui/mealDetailsTabs";
@@ -16,14 +15,13 @@ const MealDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  // to find the meal in WeekPlan based on the meal's name
-  const mealData = useMemo(() => {
-    const allMeals = WeekPlan.flatMap((day) => day.meals);
-    return allMeals.find((m) => m.name.toLowerCase().replace(/ /g, "-") === id);
-  }, [id]);
+  // Find the meal in WeekPlan by its slug (which matches the URL param)
+  const allMeals = WeekPlan.flatMap((day) => day.meals);
+  const mealData = allMeals.find((m) => m.slug === id);
 
-  // Get specific details for this meal
-  const details = MEAL_DETAILS[id] || {};
+  // Get specific details for a meal using slug (matches MEAL_DETAILS keys)
+  const detailKey = mealData?.slug || id;
+  const details = MEAL_DETAILS[detailKey] || {};
 
   // Default demo data for the meal
   const meal = {
@@ -73,7 +71,7 @@ const MealDetail = () => {
   return (
     <div className="flex flex-col pt-5 px-4 animate-in fade-in duration-500">
       {/* Hero Section */}
-      <div className="relative h-[320px] rounded-2xl overflow-hidden w-full mx-auto">
+      <div className="relative h-[400px] rounded-2xl overflow-hidden w-full mx-auto">
         <img
           src={meal.image}
           alt={meal.name}
@@ -90,7 +88,7 @@ const MealDetail = () => {
         </div>
       </div>
 
-      <div className="px-5 -mt-20 relative z-10 w-full max-w-sm mx-auto ">
+      <div className="px-5 -mt-20 relative z-10 w-full max-w-md mx-auto ">
         <div className="bg-white rounded-[32px] p-6 shadow-xl border border-black/5">
           <div className="flex justify-between items-start mb-2">
             <div>
@@ -138,7 +136,7 @@ const MealDetail = () => {
       <MealDetailsTabs meal={meal} />
 
       {/* Sticky Bottom Button */}
-      <div className="fixed bottom-15 right-0 w-full max-w-sm px-5 pb-6 bg-linear-to-t from-bg-background via-bg-background/40 to-transparent pt-10 pointer-events-none z-100">
+      {/* <div className="fixed bottom-15 right-0 w-full max-w-sm px-5 pb-6 bg-linear-to-t from-bg-background via-bg-background/40 to-transparent pt-10 pointer-events-none z-100">
         <Button
           variant="primary"
           className="w-full shadow-2xl shadow-accent-orange/30 flex items-center justify-center gap-2 py-4 text-lg pointer-events-auto "
@@ -146,7 +144,7 @@ const MealDetail = () => {
           Start Cooking
           <ChevronRightIcon className="w-5 h-5" />
         </Button>
-      </div>
+      </div> */}
     </div>
   );
 };

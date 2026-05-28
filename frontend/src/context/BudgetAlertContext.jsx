@@ -18,14 +18,16 @@ const initializeBudgetLimit = () => {
 export function BudgetAlertProvider({ children }) {
   const [shoppingListTotal, setShoppingListTotal] = useState(0);
   const [budgetLimit] = useState(initializeBudgetLimit);
-  const [showBudgetAlert, setShowBudgetAlert] = useState(true);
+
+  // Derived: alert is active only when total strictly exceeds the budget limit
+  const showBudgetAlert =
+    budgetLimit > 0 && shoppingListTotal > budgetLimit;
 
   const value = {
     shoppingListTotal,
     setShoppingListTotal,
     budgetLimit,
     showBudgetAlert,
-    setShowBudgetAlert,
   };
 
   return (
