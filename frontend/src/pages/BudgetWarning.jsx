@@ -35,7 +35,7 @@ const BudgetWarning = ({ plan, budget, onContinue }) => {
       <div className="bg-white rounded-2xl p-4 space-y-4 border border-gray-100">
         {/* label + cost */}
         <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest">
-          Weekly Meal Plan
+          Shopping List
         </p>
         <div className="flex items-center justify-between">
           <p className="font-bold text-text-primary">{plan.name}</p>
@@ -69,7 +69,10 @@ const BudgetWarning = ({ plan, budget, onContinue }) => {
             <p className="text-xs font-bold text-red-700">{utilization}%</p>
           </div>
           <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-            <div className="h-full w-full rounded-full bg-green-800" />
+            <div
+              className="h-full rounded-full bg-red-500 transition-all duration-500"
+              style={{ width: `${Math.min(utilization, 100)}%` }}
+            />
           </div>
         </div>
       </div>
@@ -89,7 +92,7 @@ const BudgetWarning = ({ plan, budget, onContinue }) => {
           <TipIcon className="w-5 h-5 text-accent-black" />
         </span>
         <p className="text-xs text-text-muted">
-          Tip: Replacing 2 premium meals saves ₦1,500
+          Tip: Remove ₦{overAmount.toLocaleString()} worth of items to stay within budget.
         </p>
       </div>
     </div>
