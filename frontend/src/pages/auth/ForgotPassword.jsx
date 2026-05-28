@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import Header from "../../components/ui/Header";
 import Button from "../../components/ui/Button";
@@ -7,9 +7,21 @@ import Footer from "../../components/ui/Footer";
 import { authService } from "../../services/auth.api";
 
 const ForgotPassword = () => {
+  const [searchParams] = useSearchParams();
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+
+  // Handle redirect from backend when reset token is invalid/expired
+  useEffect(() => {
+    const status = searchParams.get("status");
+    const message = searchParams.get("message");
+    if (status === "error" && message) {
+      toast.error(
+        message || "Reset link is invalid or expired. Request a new one.",
+      );
+    }
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
