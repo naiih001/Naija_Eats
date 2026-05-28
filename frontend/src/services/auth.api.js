@@ -54,18 +54,11 @@ export const authService = {
   },
 
   async verifyEmail(token) {
-<<<<<<< HEAD
-    const response = await fetch(`${API_BASE_URL}/auth/verify-email/${token}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-=======
     const response = await fetch(`${API_BASE_URL}/auth/verify-email`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ token }),
->>>>>>> 6f10184 (feat(auth): complete auth flow — signup, signin, verify email, forgot/reset password)
     });
-
     const data = await response.json();
 
     if (!response.ok) {
