@@ -5,9 +5,79 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import { sendVerificationEmail, sendPasswordResetEmail } from "../utils/email";
+import { authMiddleware } from "../middleware/auth";
+import { Prisma } from "@prisma/client";
 
 const router = Router();
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
+
+router.get("/me", authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      include: { profile: true },
+    });
+
+    if (!user) {
+      return _res.error(404, res, "User not found");
+    }
+
+    const { password, verifyToken, verifyTokenExp, resetToken, resetTokenExp, ...userData } = user;
+    return _res.success(200, res, "User profile retrieved successfully", userData);
+  } catch (err) {
+    console.error(err);
+    return _res.error(500, res, "Server error while fetching profile");
+  }
+});
+
+router.put("/profile", authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const { full_name, avatar_url } = req.body;
+
+    const profile = await prisma.profile.update({
+      where: { user_id: req.user.id },
+      data: {
+        full_name,
+        avatar_url,
+      },
+    });
+
+    return _res.success(200, res, "Profile updated successfully", profile);
+  } catch (err) {
+    console.error(err);
+    return _res.error(500, res, "Server error while updating profile");
+  }
+});
+
+router.post("/change-password", authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const { oldPassword, newPassword } = req.body;
+
+    if (!oldPassword || !newPassword) {
+      return _res.error(400, res, "Old and new passwords are required");
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id },
+    });
+
+    if (!user || !(await bcrypt.compare(oldPassword, user.password))) {
+      return _res.error(401, res, "Invalid old password");
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    await prisma.user.update({
+      where: { id: req.user.id },
+      data: { password: hashedPassword },
+    });
+
+    return _res.success(200, res, "Password updated successfully");
+  } catch (err) {
+    console.error(err);
+    return _res.error(500, res, "Server error while changing password");
+  }
+});
 
 router.post("/register", async (req: Request, res: Response) => {
   try {
@@ -43,8 +113,13 @@ router.post("/register", async (req: Request, res: Response) => {
       user: { id: user.id, email: user.email }
     });
   } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError) {
+      if (err.code === "P2002") {
+        return _res.error(400, res, "User with this email already exists");
+      }
+    }
     console.error(err);
-    _res.error(500, res, "Server error during registration");
+    return _res.error(500, res, "Server error during registration");
   }
 });
 
@@ -83,12 +158,11 @@ router.get("/verify-email/:token", async (req: Request, res: Response) => {
 });
 
 router.post("/verify-email/:token", async (req: Request, res: Response) => {
-  const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
   try {
     const { token } = req.params;
 
     if (!token) {
-      return res.redirect(`${frontendUrl}/sign-in?status=error&message=Token%20is%20required&verified=false`);
+      return _res.error(400, res, "Token is required");
     }
 
     const user = await prisma.user.findUnique({
@@ -96,7 +170,7 @@ router.post("/verify-email/:token", async (req: Request, res: Response) => {
     });
 
     if (!user || !user.verifyTokenExp || user.verifyTokenExp < new Date()) {
-      return res.redirect(`${frontendUrl}/sign-in?status=error&message=Invalid%20or%20expired%20verification%20token&verified=false`);
+      return _res.error(400, res, "Invalid or expired verification token");
     }
 
     await prisma.user.update({
@@ -108,10 +182,10 @@ router.post("/verify-email/:token", async (req: Request, res: Response) => {
       }
     });
 
-    return res.redirect(`${frontendUrl}/sign-in?status=success&message=Email%20verified%20successfully&verified=true`);
+    return _res.success(200, res, "Email verified successfully");
   } catch (err) {
     console.error(err);
-    return res.redirect(`${frontendUrl}/sign-in?status=error&message=Server%20error%20during%20verification&verified=false`);
+    return _res.error(500, res, "Server error during verification");
   }
 });
 
