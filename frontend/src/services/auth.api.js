@@ -32,24 +32,38 @@ export const authService = {
 
     const data = await response.json();
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
+=======
+
+>>>>>>> 6f10184 (feat(auth): complete auth flow — signup, signin, verify email, forgot/reset password)
     if (!response.ok) {
-      throw new Error(data.message || "Failed to sign up");
+      throw new Error(data.message || "Failed to create account");
     }
 >>>>>>> f238a7b (feat: added buffered budget and implemented meal swap function)
 
+<<<<<<< HEAD
     if (!response.ok) {
       throw new Error(data.message || "Failed to create account");
     }
 
+=======
+>>>>>>> 6f10184 (feat(auth): complete auth flow — signup, signin, verify email, forgot/reset password)
     // backend does NOT return a token on register — email verification required first
     return data;
   },
 
   async verifyEmail(token) {
+<<<<<<< HEAD
     const response = await fetch(`${API_BASE_URL}/auth/verify-email/${token}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+=======
+    const response = await fetch(`${API_BASE_URL}/auth/verify-email`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token }),
+>>>>>>> 6f10184 (feat(auth): complete auth flow — signup, signin, verify email, forgot/reset password)
     });
 
     const data = await response.json();
@@ -104,6 +118,7 @@ export const authService = {
 
     if (!response.ok) {
       throw new Error(data.message || "Failed to reset password");
+<<<<<<< HEAD
     }
 
     return data;
@@ -128,6 +143,8 @@ export const authService = {
 
     if (!response.ok) {
       throw new Error(data.message || "Failed to fetch user info");
+=======
+>>>>>>> 6f10184 (feat(auth): complete auth flow — signup, signin, verify email, forgot/reset password)
     }
 
     return data;
