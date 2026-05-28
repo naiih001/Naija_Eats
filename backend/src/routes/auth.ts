@@ -52,6 +52,43 @@ router.get("/verify-email", async (req: Request, res: Response) => {
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
   try {
     const { token } = req.query;
+router.get("/verify-email/:token", async (req: Request, res: Response) => {
+  try {
+    const { token } = req.params;
+    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+
+    if (!token) {
+      return res.redirect(`${frontendUrl}/verify-email?status=error&message=Token is required`);
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { verifyToken: token as string }
+    });
+
+    if (!user || !user.verifyTokenExp || user.verifyTokenExp < new Date()) {
+      return res.redirect(`${frontendUrl}/verify-email?status=error&message=Invalid or expired verification token`);
+    }
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        isVerified: true,
+        verifyToken: null,
+        verifyTokenExp: null
+      }
+    });
+
+    return res.redirect(`${frontendUrl}/verify-email?status=success`);
+  } catch (err) {
+    console.error(err);
+    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+    return res.redirect(`${frontendUrl}/verify-email?status=error&message=Server error during verification`);
+  }
+});
+
+router.post("/verify-email/:token", async (req: Request, res: Response) => {
+  try {
+    const { token } = req.params;
 
     if (!token) {
       return res.redirect(`${frontendUrl}/sign-in?status=error&message=Token%20is%20required&verified=false`);

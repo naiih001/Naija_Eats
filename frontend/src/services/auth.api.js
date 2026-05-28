@@ -41,10 +41,9 @@ export const authService = {
   },
 
   async verifyEmail(token) {
-    const response = await fetch(`${API_BASE_URL}/auth/verify-email`, {
+    const response = await fetch(`${API_BASE_URL}/auth/verify-email/${token}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token }),
     });
 
     const data = await response.json();
