@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { SearchIcon, ShoppingCartIcon } from "../constants/icons";
+import { useNavigate } from "react-router-dom";
+import { ArrowRightIcon, SearchIcon } from "../constants/icons";
 
 import { useBudgetAlert } from "../context/useBudgetAlert";
 import { WeekPlan } from "../constants/weekPlan";
@@ -11,15 +12,23 @@ import {
   SpiceIcon,
 } from "../constants/icons";
 import { WeeklySummaryCard } from "../components/ui/WeeklySummaryCard";
+import BudgetWarning from "./BudgetWarning";
 
 const Market = () => {
+  const navigate = useNavigate();
   const [activeFilter, setActiveFilter] = useState("Today's Meals");
   const [searchTerm, setSearchTerm] = useState("");
-  const { setShoppingListTotal } = useBudgetAlert();
+  const { setShoppingListTotal, budgetLimit, showBudgetAlert } =
+    useBudgetAlert();
   const [randomMeal, setRandomMeal] = useState(WeekPlan[0].meals[0]);
   const [marketData, setMarketData] = useState(() =>
     getMealMarketData(WeekPlan[0].meals[0]),
   );
+  const [showBudgetWarning, setShowBudgetWarning] = useState(false);
+  const [customItems, setCustomItems] = useState([]);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newItemName, setNewItemName] = useState("");
+  const [newItemPrice, setNewItemPrice] = useState("");
   const categoryIcons = {
     Grains: <GrainIcon />,
     Proteins: <ProteinIcon />,
@@ -40,9 +49,9 @@ const Market = () => {
     setMarketData(getMealMarketData(meal)); // add this
   };
 
-  // Calculate and update shopping list total
+  // Calculate and update shopping list total (market items + custom items)
   useEffect(() => {
-    const total = marketData.reduce(
+    const marketTotal = marketData.reduce(
       (sum, category) =>
         sum +
         category.items.reduce(
@@ -51,8 +60,38 @@ const Market = () => {
         ),
       0,
     );
+    const customTotal = customItems.reduce(
+      (sum, item) => sum + (item.price || 0),
+      0,
+    );
+    const total = marketTotal + customTotal;
     setShoppingListTotal(total);
-  }, [marketData, setShoppingListTotal]);
+  }, [marketData, customItems, setShoppingListTotal, budgetLimit]);
+
+  const addCustomItem = () => {
+    const name = newItemName.trim();
+    if (!name) return;
+    const price = parseFloat(newItemPrice) || 0;
+    setCustomItems((prev) => [
+      ...prev,
+      { name, price, bought: false, id: Date.now() },
+    ]);
+    setNewItemName("");
+    setNewItemPrice("");
+    setShowAddForm(false);
+  };
+
+  const removeCustomItem = (id) => {
+    setCustomItems((prev) => prev.filter((item) => item.id !== id));
+  };
+
+  const toggleCustomBought = (id) => {
+    setCustomItems((prev) =>
+      prev.map((item) =>
+        item.id === id ? { ...item, bought: !item.bought } : item,
+      ),
+    );
+  };
 
   const handleSearch = (e) => {
     setSearchTerm(e.target.value);
@@ -124,7 +163,7 @@ const Market = () => {
           </h2>
           <button
             onClick={swapMeals}
-            className="text-accent-orange text-xs font-bold flex items-center gap-1 hover:underline"
+            className="text-accent-orange text-xs font-bold flex items-center gap-1 hover:underline cursor-pointer"
           >
             Swap Meal
             <svg
@@ -180,9 +219,12 @@ const Market = () => {
             </div>
           </div>
 
-          <button className="bg-accent-orange hover:bg-[#e66a13] text-white py-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-colors">
-            <ShoppingCartIcon className="w-4 h-4" />
-            Add All to Cart
+          <button
+            onClick={() => navigate(`/meal/${randomMeal.slug}`)}
+            className="bg-accent-orange hover:bg-[#e66a13] text-white py-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer"
+          >
+            <ArrowRightIcon />
+            Start Cooking
           </button>
         </div>
       </section>
@@ -263,7 +305,7 @@ const Market = () => {
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      {item.price && (
+                      {(item.minPrice !== undefined && item.maxPrice !== undefined) && (
                         <span
                           className={`text-xs font-bold ${
                             item.bought
@@ -271,7 +313,7 @@ const Market = () => {
                               : "text-text-primary"
                           }`}
                         >
-                          ₦ {item.price.toFixed(2)}
+                          ₦{item.minPrice.toLocaleString()} - ₦{item.maxPrice.toLocaleString()}
                         </span>
                       )}
                       {item.qty && (
@@ -287,45 +329,241 @@ const Market = () => {
           </div>
         ))}
       </div>
-      <div className="bg-white rounded-2xl p-4 flex items-center justify-between shadow-sm">
-        <div className="flex flex-col gap-0.5">
-          <span className="text-[11px] font-bold uppercase tracking-widest text-text-muted">
-            Estimated Total
-          </span>
-          <span className="text-2xl font-display font-extrabold text-text-primary">
-            ₦
-            {marketData
-              .reduce(
-                (sum, cat) =>
-                  sum +
-                  cat.items.reduce((s, item) => s + (item.minPrice || 0), 0),
-                0,
-              )
-              .toLocaleString()}
-            {" – "}₦
-            {marketData
-              .reduce(
-                (sum, cat) =>
-                  sum +
-                  cat.items.reduce((s, item) => s + (item.maxPrice || 0), 0),
-                0,
-              )
-              .toLocaleString()}
-          </span>
+
+      {/* Custom Items Section */}
+      {(customItems.length > 0 || showAddForm) && (
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center gap-2 opacity-80">
+            <span className="text-xl">✏️</span>
+            <h2 className="text-lg font-display font-bold text-text-primary">
+              Custom Items
+            </h2>
+          </div>
+          <div className="flex flex-col gap-2">
+            {customItems.map((item) => (
+              <div
+                key={item.id}
+                className="bg-white rounded-2xl p-4 flex items-center gap-4 shadow-sm border border-transparent"
+              >
+                <div
+                  onClick={() => toggleCustomBought(item.id)}
+                  className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all cursor-pointer shrink-0 ${
+                    item.bought
+                      ? "bg-accent-orange border-accent-orange"
+                      : "border-text-muted"
+                  }`}
+                >
+                  {item.bought && (
+                    <svg width="12" height="9" viewBox="0 0 12 9" fill="none">
+                      <path
+                        d="M1 4L4.5 7.5L11 1"
+                        stroke="white"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                  )}
+                </div>
+                <div
+                  className="flex-1 flex flex-col cursor-pointer"
+                  onClick={() => toggleCustomBought(item.id)}
+                >
+                  <span
+                    className={`text-sm font-bold ${
+                      item.bought
+                        ? "text-text-muted line-through"
+                        : "text-text-primary"
+                    }`}
+                  >
+                    {item.name}
+                  </span>
+                </div>
+                <div className="flex items-center gap-3">
+                  {item.price > 0 && (
+                    <span
+                      className={`text-xs font-bold ${
+                        item.bought
+                          ? "text-text-muted line-through"
+                          : "text-text-primary"
+                      }`}
+                    >
+                      ₦{item.price.toLocaleString()}
+                    </span>
+                  )}
+                  <button
+                    onClick={() => removeCustomItem(item.id)}
+                    className="w-7 h-7 rounded-lg bg-red-50 flex items-center justify-center hover:bg-red-100 transition-colors text-red-500"
+                    aria-label="Remove item"
+                  >
+                    <svg
+                      width="12"
+                      height="12"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                    >
+                      <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
-        <div className="flex flex-col items-end gap-0.5">
-          <span className="text-[10px] text-text-muted font-medium">
-            {marketData.reduce((sum, cat) => sum + cat.items.length, 0)} items
-          </span>
-          <span className="text-[10px] text-text-muted font-medium">
-            {marketData.reduce(
-              (sum, cat) => sum + cat.items.filter((i) => i.bought).length,
-              0,
-            )}{" "}
-            bought
-          </span>
+      )}
+
+      {/* Add Custom Item inline form */}
+      {showAddForm ? (
+        <div className="bg-white rounded-2xl p-4 flex flex-col gap-3 shadow-sm border-2 border-accent-orange/30">
+          <p className="text-xs font-bold uppercase tracking-widest text-text-muted">
+            New Item
+          </p>
+          <input
+            type="text"
+            placeholder="Item name (e.g. Ugwu leaves)"
+            value={newItemName}
+            onChange={(e) => setNewItemName(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && addCustomItem()}
+            autoFocus
+            className="w-full bg-[#F8F8DF] rounded-xl py-3 px-4 text-sm font-medium outline-none placeholder:text-text-muted border border-transparent focus:border-accent-orange/50 transition-colors"
+          />
+          <input
+            type="number"
+            placeholder="Estimated price (optional, ₦)"
+            value={newItemPrice}
+            onChange={(e) => setNewItemPrice(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && addCustomItem()}
+            className="w-full bg-[#F8F8DF] rounded-xl py-3 px-4 text-sm font-medium outline-none placeholder:text-text-muted border border-transparent focus:border-accent-orange/50 transition-colors"
+          />
+          <div className="flex gap-2">
+            <button
+              onClick={addCustomItem}
+              className="flex-1 bg-accent-orange text-white rounded-xl py-2.5 text-sm font-bold hover:bg-[#e66a13] transition-colors"
+            >
+              Add Item
+            </button>
+            <button
+              onClick={() => {
+                setShowAddForm(false);
+                setNewItemName("");
+                setNewItemPrice("");
+              }}
+              className="px-4 bg-black/5 text-text-muted rounded-xl py-2.5 text-sm font-bold hover:bg-black/10 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
         </div>
-      </div>
+      ) : (
+        <button
+          onClick={() => setShowAddForm(true)}
+          className="flex items-center gap-2 text-sm font-bold text-accent-orange hover:underline"
+        >
+          <span className="w-7 h-7 rounded-full bg-accent-orange/10 flex items-center justify-center text-accent-orange font-bold text-lg leading-none">
+            +
+          </span>
+          Add Custom Item
+        </button>
+      )}
+
+      {/* Totals + budget progress */}
+      {(() => {
+        const minTotal =
+          marketData.reduce(
+            (sum, cat) =>
+              sum + cat.items.reduce((s, item) => s + (item.minPrice || 0), 0),
+            0,
+          ) + customItems.reduce((sum, item) => sum + (item.price || 0), 0);
+        const maxTotal =
+          marketData.reduce(
+            (sum, cat) =>
+              sum + cat.items.reduce((s, item) => s + (item.maxPrice || 0), 0),
+            0,
+          ) + customItems.reduce((sum, item) => sum + (item.price || 0), 0);
+        const totalItems =
+          marketData.reduce((sum, cat) => sum + cat.items.length, 0) +
+          customItems.length;
+        const boughtItems =
+          marketData.reduce(
+            (sum, cat) => sum + cat.items.filter((i) => i.bought).length,
+            0,
+          ) + customItems.filter((i) => i.bought).length;
+        const budgetUsedPct =
+          budgetLimit > 0
+            ? Math.min(Math.round((minTotal / budgetLimit) * 100), 100)
+            : 0;
+        const isOverBudget = budgetLimit > 0 && minTotal > budgetLimit;
+
+        return (
+          <div className="bg-white rounded-2xl p-4 flex flex-col gap-3 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-0.5">
+                <span className="text-[11px] font-bold uppercase tracking-widest text-text-muted">
+                  Estimated Total
+                </span>
+                <span
+                  className={`text-2xl font-display font-extrabold ${
+                    isOverBudget ? "text-red-600" : "text-text-primary"
+                  }`}
+                >
+                  ₦{minTotal.toLocaleString()}
+                  {" – "}₦{maxTotal.toLocaleString()}
+                </span>
+              </div>
+              <div className="flex flex-col items-end gap-0.5">
+                <span className="text-[10px] text-text-muted font-medium">
+                  {totalItems} items
+                </span>
+                <span className="text-[10px] text-text-muted font-medium">
+                  {boughtItems} bought
+                </span>
+              </div>
+            </div>
+
+            {/* Budget progress bar — only shown when a budget limit is set */}
+            {budgetLimit > 0 && (
+              <div className="flex flex-col gap-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] text-text-muted font-medium">
+                    Budget: ₦{budgetLimit.toLocaleString()}
+                  </span>
+                  <span
+                    className={`text-[11px] font-bold ${
+                      isOverBudget ? "text-red-600" : "text-green-700"
+                    }`}
+                  >
+                    {isOverBudget
+                      ? `₦${(minTotal - budgetLimit).toLocaleString()} over`
+                      : `${budgetUsedPct}% used`}
+                  </span>
+                </div>
+                <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all duration-500 ${
+                      isOverBudget
+                        ? "bg-red-500"
+                        : budgetUsedPct > 80
+                          ? "bg-amber-400"
+                          : "bg-green-500"
+                    }`}
+                    style={{ width: `${Math.min(budgetUsedPct, 100)}%` }}
+                  />
+                </div>
+                {isOverBudget && (
+                  <button
+                    onClick={() => setShowBudgetWarning(true)}
+                    className="mt-1 text-xs text-red-600 font-bold underline underline-offset-2 text-left"
+                  >
+                    View budget warning →
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       <div className="">
         <button
@@ -335,6 +573,43 @@ const Market = () => {
           {allBought ? "Unmark all" : "Mark all as bought"}
         </button>
       </div>
+
+      {/* Budget Warning modal — only appears when total exceeds budget */}
+      {showBudgetAlert && showBudgetWarning && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm"
+          onClick={() => setShowBudgetWarning(false)}
+        >
+          <div
+            className="bg-[#F8F8DF] w-full max-w-sm rounded-t-3xl shadow-2xl animate-in slide-in-from-bottom duration-300"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-10 h-1 bg-gray-300 rounded-full mx-auto mt-3 mb-1" />
+            <BudgetWarning
+              plan={{
+                name: randomMeal.name,
+                cost:
+                  marketData.reduce(
+                    (sum, cat) =>
+                      sum +
+                      cat.items.reduce(
+                        (s, item) => s + (item.minPrice || 0),
+                        0,
+                      ),
+                    0,
+                  ) +
+                  customItems.reduce((sum, item) => sum + (item.price || 0), 0),
+                meals:
+                  marketData.reduce((sum, cat) => sum + cat.items.length, 0) +
+                  customItems.length,
+                days: 1,
+              }}
+              budget={{ limit: budgetLimit }}
+              onContinue={() => setShowBudgetWarning(false)}
+            />
+          </div>
+        </div>
+      )}
     </main>
   );
 };

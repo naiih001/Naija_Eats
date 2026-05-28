@@ -3,7 +3,7 @@ import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
 import mealsRoutes from "./routes/meals";
-import authRoutes from "./routes/auth";
+import { router as authRoutes } from "./routes/auth";
 import onboardingRoutes from "./routes/onboarding";
 import { authMiddleware } from "./middleware/auth";
 
@@ -29,7 +29,12 @@ app.get("/health", (req: Request, res: Response) => {
 });
 
 app.use("/auth", authRoutes);
-app.use("/", authMiddleware, mealsRoutes);
+app.use("/meals", authMiddleware, mealsRoutes);
 app.use("/api", authMiddleware, onboardingRoutes);
+
+// Catch-all 404 handler
+app.use((req, res) => {
+  res.status(404).json({ success: false, message: "Route not found" });
+});
 
 export default app;

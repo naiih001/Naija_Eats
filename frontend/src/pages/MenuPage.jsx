@@ -1,17 +1,15 @@
 import { useState, useEffect } from "react";
 import { SearchIcon } from "../constants/icons";
 import { useNavigate } from "react-router-dom";
-import EmptyState from "../pages/EmptyState";
-import BudgetWarning from "../pages/BudgetWarning";
-
+import { WeekPlan } from "../constants/weekPlan";
 // ─── TODO: replace with real API data later ───────────────────────────
-const MOCK_PLAN = {
-  name: "Premium Jollof Pack",
-  cost: 6200,
-  meals: 14,
-  days: 7,
-};
-const MOCK_BUDGET = { limit: 5000 };
+// const MOCK_PLAN = {
+//   name: "Premium Jollof Pack",
+//   cost: 6200,
+//   meals: 14,
+//   days: 7,
+// };
+// const MOCK_BUDGET = { limit: 5000 };
 // ─────────────────────────────────────────────────────────────────────
 
 const MenuPage = () => {
@@ -20,10 +18,10 @@ const MenuPage = () => {
   const [value, setValue] = useState("");
   const [debouncedValue, setDebouncedValue] = useState("");
 
-  // plan state
-  const hasPlan = true;
-  const budgetExceeded = true;
-  const [warningDismissed, setWarningDismissed] = useState(false);
+  // // plan state
+  // const hasPlan = true;
+  // const budgetExceeded = true;
+  // const [warningDismissed, setWarningDismissed] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -32,48 +30,16 @@ const MenuPage = () => {
     return () => clearTimeout(timer);
   }, [value]);
 
-  const meals = [
-    {
-      id: 1,
-      name: "Smokey Party Jollof",
-      price: "₦4,500",
-      duration: "45 mins",
-      description:
-        "Authentic firewood-smoked Jollof rice served with peppered protein and...",
-      img: "/images/smoked_jollof.png",
-      category: "Rice Dishes",
-    },
-    {
-      id: 2,
-      name: "Swallow & Egusi Soup",
-      price: "₦5,200",
-      duration: "60 mins",
-      description:
-        "Hand-peeled melon seeds cooked with bitter-leaf, stockfish and assorted...",
-      img: "/images/swallow_egusi.png",
-      category: ["Swallows", "Soups"],
-    },
-    {
-      id: 3,
-      name: "Simple Beef Suya",
-      price: "₦2,000",
-      duration: "20 mins",
-      description:
-        "Premium beef cuts marinated in suya spice, grilled over red-hot charcoal...",
-      img: "/images/beef_suya.png",
-      category: "Proteins",
-    },
-    {
-      id: 4,
-      name: "Pounded Yam & Ogbono",
-      price: "₦3,800",
-      duration: "30 mins",
-      description:
-        "Fluffy, hand-pounded yam served with draw-soup rich in proteins.",
-      img: "/images/ogbona.png",
-      category: ["Rice Dishes", "Soups"],
-    },
-  ];
+  const meals = WeekPlan.flatMap((day) => day.meals).map((m, index) => ({
+    id: index + 1,
+    slug: m.slug,
+    name: m.name,
+    price: m.price,
+    duration: "45 mins",
+    description: m.description,
+    img: m.image,
+    category: m.category || [],
+  }));
 
   const filteredMeals = meals.filter((meal) => {
     const matchesCategory =
@@ -87,19 +53,19 @@ const MenuPage = () => {
 
   const navigate = useNavigate();
 
-  // state gates
-  if (!hasPlan) return <EmptyState />;
+  // // state gates
+  // if (!hasPlan) return <EmptyState />;
 
-  if (budgetExceeded && !warningDismissed) {
-    return (
-      <BudgetWarning
-        plan={MOCK_PLAN}
-        budget={MOCK_BUDGET}
-        onContinue={() => setWarningDismissed(true)}
-      />
-    );
-  }
-  //
+  // if (budgetExceeded && !warningDismissed) {
+  //   return (
+  //     <BudgetWarning
+  //       plan={MOCK_PLAN}
+  //       budget={MOCK_BUDGET}
+  //       onContinue={() => setWarningDismissed(true)}
+  //     />
+  //   );
+  // }
+  // //
 
   return (
     <main className="px-5 pt-8 flex flex-col gap-6">
@@ -140,9 +106,9 @@ const MenuPage = () => {
         {filteredMeals.map((meal) => (
           <div
             key={meal.id}
-            className="bg-text-primary rounded-md overflow-hidden shadow-xl flex flex-col"
+            className="bg-text-primary rounded-md overflow-hidden shadow-xl flex flex-col h-full max-h-[420px]"
           >
-            <div className="relative h-56">
+            <div className="relative h-[50%]">
               <img
                 src={meal.img}
                 alt={meal.name}
@@ -178,7 +144,7 @@ const MenuPage = () => {
               </div>
             </div>
 
-            <div className="p-6 flex flex-col justify-between items-start gap-3">
+            <div className="p-6 h-[50%] flex flex-col justify-between items-start gap-3">
               <div className="flex justify-between items-start w-full">
                 <h3 className="text-xl font-display font-bold text-white max-w-[70%] leading-tight">
                   {meal.name}
@@ -191,12 +157,8 @@ const MenuPage = () => {
                 {meal.description}
               </p>
               <button
-                className="bg-accent-orange hover:bg-accent-orange/75 text-white py-3.5 rounded-xs font-bold text-xs flex items-center justify-center gap-2 transition-all active:scale-95 w-full max-w-xs mt-auto"
-                onClick={() =>
-                  navigate(
-                    `/meal/${meal.name.toLowerCase().replace(/ /g, "-")}`,
-                  )
-                }
+                className="bg-accent-orange mt-auto hover:bg-accent-orange/75 text-white py-3.5 rounded-xs font-bold text-xs flex items-center justify-center gap-2 transition-all active:scale-95 w-full max-w-xs mt-auto"
+                onClick={() => navigate(`/meal/${meal.slug}`)}
               >
                 View Meal
                 <svg
@@ -215,6 +177,79 @@ const MenuPage = () => {
             </div>
           </div>
         ))}
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Large Trending Recipe */}
+        <div className="lg:col-span-7 bg-white rounded-4xl overflow-hidden group cursor-pointer border border-text-muted/5">
+          <div className="relative h-100 lg:h-125">
+            <img
+              src="/images/fisherman_soup.png"
+              alt="Fisherman's Harvest Soup"
+              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+            />
+            <div className="absolute h-inherit inset-0 bg-linear-to-t from-black/80 via-transparent to-transparent" />
+            <div className="absolute bottom-8 left-8 right-8 text-white">
+              <span className=" px-3 py-1.5 bg-accent-orange rounded-xl text-white mb-4 inline-block">
+                Trending
+              </span>
+
+              <h3 className="text-3xl lg:text-4xl font-display font-bold mb-2">
+                Fisherman's Harvest Soup
+              </h3>
+              <p className="text-white/70 text-sm mb-6 max-w-md line-clamp-2">
+                A rich, aromatic seafood delicacy from the coastal regions,
+                reimagined for the modern palate.
+              </p>
+              <div className="flex justify-between items-center"></div>
+            </div>
+          </div>
+        </div>
+
+        {/* Grid of smaller recipes */}
+        <div className="lg:col-span-5 grid grid-cols-1 gap-6">
+          <div className="bg-[#1A3013] rounded-4xl overflow-hidden  group cursor-pointer h-full min-h-60 relative">
+            <img
+              src="/images/ribeye.png"
+              alt="Suya-Spiced Ribeye"
+              className="w-full h-full object-cover opacity-80 transition-transform duration-700 group-hover:scale-105"
+            />
+            <div className="absolute inset-0 bg-linear-to-r from-black/60 to-transparent" />
+            <div className="absolute bottom-6 left-6 text-white">
+              <h4 className="text-xl font-display font-bold mb-1">
+                Suya-Spiced Ribeye
+              </h4>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-6 h-full min-h-60">
+            <div className="bg-[#F8F8DF] rounded-4xl overflow-hidden border border-text-muted/10 group cursor-pointer relative">
+              <img
+                src="/images/puffpuff.png"
+                alt="Spiced Puff-Puff"
+                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors" />
+              <div className="absolute bottom-4 left-4 right-4">
+                <h4 className="text-sm font-bold text-white drop">
+                  Spiced Puff-Puff
+                </h4>
+              </div>
+            </div>
+            <div className="bg-[#F8F8DF] rounded-4xl overflow-hidden border border-text-muted/10 group cursor-pointer relative">
+              <img
+                src="/images/vegetable.svg"
+                alt="Fonio Superbowl"
+                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors" />
+              <div className="absolute bottom-4 left-4 right-4">
+                <h4 className="text-sm font-bold text-white drop">
+                  Fonio Superbowl
+                </h4>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </main>
   );

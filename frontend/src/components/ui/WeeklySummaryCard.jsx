@@ -20,8 +20,8 @@ export const WeeklySummaryCard = () => {
   return (
     <>
       {/* Weekly Budget Summary Card */}
-      <div className="p-4 relative z-100">
-        <div className="bg-text-primary rounded-2xl p-6 text-white relative overflow-hidden shadow-lg justify-between flex items-center gap-6">
+      <div className="relative z-100">
+        <div className="bg-text-primary rounded-2xl p-4 lg:p-6 text-white relative overflow-hidden shadow-lg justify-between flex items-center gap-6">
           <div className="relative z-10">
             <span className="text-[10px] font-bold uppercase tracking-widest opacity-70">
               Weekly Budget Summary

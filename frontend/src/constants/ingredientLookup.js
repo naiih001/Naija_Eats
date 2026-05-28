@@ -39,6 +39,8 @@ export const IngredientLookup = {
     "Locust Beans": { qty: "2 tbsp", minPrice: 80, maxPrice: 150, category: "Spices" },
     "Ginger": { qty: "1 piece", minPrice: 80, maxPrice: 150, category: "Spices" },
     "Garlic": { qty: "1 bulb", minPrice: 100, maxPrice: 200, category: "Spices" },
+    "Curry Powder": { qty: "1 sachet", minPrice: 100, maxPrice: 200, category: "Spices" },
+    "Thyme": { qty: "1 sachet", minPrice: 100, maxPrice: 200, category: "Spices" },
 
     // Miscellaneous
     "Vegetable Oil": { qty: "500ml", minPrice: 650, maxPrice: 1000, category: "Miscellaneous" },
@@ -51,4 +53,6 @@ export const IngredientLookup = {
     "Coffee Beans": { qty: "1 sachet", minPrice: 250, maxPrice: 400, category: "Miscellaneous" },
     "Hibiscus Leaves": { qty: "1 pack", minPrice: 150, maxPrice: 300, category: "Miscellaneous" },
     "Water": { qty: null, minPrice: 0, maxPrice: 0, category: "Miscellaneous" },
+    "Tomato Paste": { qty: "1 tin", minPrice: 200, maxPrice: 400, category: "Miscellaneous" },
+    "Baking Powder": { qty: "1 tin", minPrice: 200, maxPrice: 350, category: "Miscellaneous" },
 };
