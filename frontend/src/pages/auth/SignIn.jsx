@@ -120,7 +120,10 @@ const SignIn = () => {
               </p>
               <p className="text-xs text-amber-700">
                 Check your inbox for the verification link sent to{" "}
-                <span className="font-semibold">{unverifiedEmail}</span>
+                <span className="font-semibold">{unverifiedEmail} </span> <br />
+                <span className="text-xs font-bold pt-4 ">
+                  (Check Your spam folder also)
+                </span>
               </p>
               <button
                 onClick={handleResend}

@@ -97,6 +97,10 @@ const SignUp = () => {
                 We sent a verification link to{" "}
                 <span className="font-semibold text-text-primary">
                   {registeredEmail}
+                </span>{" "}
+                <br />
+                <span className="text-xs font-bold pt-4 ">
+                  (Check Your spam folder also)
                 </span>
                 . Click it to activate your account.
               </p>
