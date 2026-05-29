@@ -5,12 +5,12 @@ import morgan from "morgan";
 import mealsRoutes from "./routes/meals";
 import { router as authRoutes } from "./routes/auth";
 import onboardingRoutes from "./routes/onboarding";
+import profileRoutes from "./routes/profile";
 import { authMiddleware } from "./middleware/auth";
 
 const app: Application = express();
 
 // Middleware
-
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" }
 }));
@@ -31,6 +31,7 @@ app.get("/health", (req: Request, res: Response) => {
 app.use("/auth", authRoutes);
 app.use("/meals", authMiddleware, mealsRoutes);
 app.use("/api", authMiddleware, onboardingRoutes);
+app.use("/profile", profileRoutes);
 
 // Catch-all 404 handler
 app.use((req, res) => {
