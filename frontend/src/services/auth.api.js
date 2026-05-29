@@ -18,6 +18,11 @@ export const authService = {
 
     if (data.data?.token) {
       localStorage.setItem("token", data.data.token);
+      if (data.data?.user) {
+        localStorage.setItem("user", JSON.stringify(data.data.user));
+      } else {
+        localStorage.setItem("user", JSON.stringify({ email }));
+      }
     }
 
     return data;
@@ -40,10 +45,9 @@ export const authService = {
   },
 
   async verifyEmail(token) {
-    const response = await fetch(`${API_BASE_URL}/auth/verify-email`, {
+    const response = await fetch(`${API_BASE_URL}/auth/verify-email/${token}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token }),
     });
 
     const data = await response.json();
@@ -98,6 +102,67 @@ export const authService = {
 
     if (!response.ok) {
       throw new Error(data.message || "Failed to reset password");
+    }
+
+    return data;
+  },
+
+  // GET /profile/me — fetch logged in user's profile
+  async userInfo() {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      throw new Error("No authentication token found. Please sign in again.");
+    }
+
+    const response = await fetch(`${API_BASE_URL}/profile/me`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Failed to fetch user info");
+    }
+
+    // Update localStorage with fresh data from server
+    if (data.data) {
+      localStorage.setItem("user", JSON.stringify(data.data));
+    }
+
+    return data;
+  },
+
+  // PATCH /profile/me — update profile
+  async updateProfile(updates) {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      throw new Error("No authentication token found. Please sign in again.");
+    }
+
+    const response = await fetch(`${API_BASE_URL}/profile/me`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(updates),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Failed to update profile");
+    }
+
+    // Update localStorage with new data
+    if (data.data) {
+      localStorage.setItem("user", JSON.stringify(data.data));
     }
 
     return data;

@@ -1,30 +1,39 @@
-/* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { authService } from "../services/auth.api";
 
 const Profile = () => {
   const navigate = useNavigate();
-  const [userData, setUserData] = useState({
-    full_name: "John Doe",
-    location: "Lagos, Nigeria",
-    role: "Health Enthusiast",
-  });
+  const [userData, setUserData] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const savedUser = localStorage.getItem("user");
-    if (savedUser) {
+    const fetchProfile = async () => {
       try {
-        const user = JSON.parse(savedUser);
-        setUserData((prev) => ({
-          ...prev,
-          full_name: user.full_name || prev.full_name,
-        }));
-      } catch (e) {
-        console.error("Failed to parse user data", e);
+        const data = await authService.userInfo();
+        setUserData(data.data);
+      } catch (err) {
+        // fallback to localStorage if API fails
+        const saved = localStorage.getItem("user");
+        if (saved) {
+          try {
+            setUserData(JSON.parse(saved));
+          } catch (parseErr) {
+            console.error("Failed to parse user from localStorage", parseErr);
+          }
+        }
+        // if token expired redirect to sign in
+        if (err.message?.includes("token")) {
+          navigate("/sign-in");
+        }
+      } finally {
+        setIsLoading(false);
       }
-    }
-  }, []);
+    };
+
+    fetchProfile();
+  }, [navigate]);
+
   const settingsGroups = [
     {
       title: "Account Settings",
@@ -41,7 +50,7 @@ const Profile = () => {
                 <path
                   fill="currentColor"
                   d="M5 3a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-2.28A2 2 0 0 0 22 15V9a2 2 0 0 0-1-1.72V5a2 2 0 0 0-2-2zm0 2h14v2h-6a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h6v2H5zm8 4h7v6h-7zm3 1.5a1.5 1.5 0 0 0-1.5 1.5a1.5 1.5 0 0 0 1.5 1.5a1.5 1.5 0 0 0 1.5-1.5a1.5 1.5 0 0 0-1.5-1.5"
-                ></path>
+                />
               </svg>
             </div>
           ),
@@ -133,16 +142,39 @@ const Profile = () => {
     },
   ];
 
+  if (isLoading) {
+    return (
+      <main className="px-5 pt-12 flex flex-col items-center">
+        <div className="w-32 h-32 rounded-full bg-gray-200 animate-pulse" />
+        <div className="mt-6 h-8 w-48 bg-gray-200 rounded animate-pulse" />
+        <div className="mt-2 h-4 w-32 bg-gray-200 rounded animate-pulse" />
+      </main>
+    );
+  }
+
+  const fullName =
+    userData?.profile?.full_name || userData?.full_name || "NaijaEats User";
+  const avatarUrl = userData?.profile?.avatar_url || null;
+  const email = userData?.email || "";
+
   return (
     <main className="px-5 pt-12 flex flex-col items-center">
-      {/* Avatar Section */}
+      {/* Avatar */}
       <div className="relative">
         <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-200">
-          <img
-            src="/images/Avatar.png"
-            alt="Profile image"
-            className="w-full h-full object-cover"
-          />
+          {avatarUrl ? (
+            <img
+              src={avatarUrl}
+              alt="Profile"
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <img
+              src="/images/Avatar.png"
+              alt="Profile"
+              className="w-full h-full object-cover"
+            />
+          )}
         </div>
         <button className="absolute bottom-1 right-1 bg-accent-orange w-8 h-8 rounded-full flex items-center justify-center border-4 border-[#F8F8DF] text-white">
           <svg
@@ -161,14 +193,12 @@ const Profile = () => {
       {/* User Info */}
       <div className="text-center mt-6">
         <h1 className="text-4xl font-display font-extrabold text-text-primary">
-          {userData.full_name}
+          {fullName}
         </h1>
-        <p className="text-sm font-medium text-gray-500 mt-1">
-          {userData.location} • {userData.role}
-        </p>
+        <p className="text-sm font-medium text-gray-500 mt-1">{email}</p>
       </div>
 
-      {/* Settings Sections */}
+      {/* Settings */}
       <div className="w-full mt-10 flex flex-col gap-8">
         {settingsGroups.map((group, gIdx) => (
           <div key={gIdx} className="flex flex-col gap-3">
@@ -228,7 +258,7 @@ const Profile = () => {
         ))}
       </div>
 
-      {/* Logout Button */}
+      {/* Logout */}
       <button
         onClick={() => {
           authService.logout();
@@ -249,7 +279,7 @@ const Profile = () => {
         Logout
       </button>
 
-      <div className="mt-6 text-[10px] font-bold text-gray-300 uppercase tracking-widest">
+      <div className="mt-6 mb-10 text-[10px] font-bold text-gray-300 uppercase tracking-widest">
         Version 2.4.0
       </div>
     </main>
