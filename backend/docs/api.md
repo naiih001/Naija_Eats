@@ -523,6 +523,60 @@ Error responses:
 
 These routes come from [src/routes/onboarding.ts](/home/isaac/Documents/caya/Naija_Eats/backend/src/routes/onboarding.ts:1).
 
+### `GET /api/budget/status`
+
+Calculates and returns the user's budget status based on their limit and active meal plan.
+
+Success response:
+
+```json
+{
+  "success": true,
+  "message": "Budget status retrieved successfully",
+  "data": {
+    "limit": 15000,
+    "currentSpending": 12500,
+    "remaining": 2500,
+    "overage": 0,
+    "exceeded": false,
+    "utilization": 83,
+    "tier": "Premium",
+    "frequency": "Weekly",
+    "buffer": "15%",
+    "planId": "plan-uuid"
+  }
+}
+```
+
+### `GET /api/users/preferences/budget`
+
+Retrieves the user's raw budget settings and current status.
+
+Success response:
+
+```json
+{
+  "success": true,
+  "message": "Budget preferences retrieved successfully",
+  "data": {
+    "budget": {
+      "id": "budget-uuid",
+      "user_id": "user-uuid",
+      "tier": "Premium",
+      "value": "15000",
+      "frequency": "Weekly",
+      "fluctuation_buffer": "15%"
+    },
+    "status": {
+      "limit": 15000,
+      "currentSpending": 12500,
+      "utilization": 83,
+      "exceeded": false
+    }
+  }
+}
+```
+
 ### `POST /api/users/preferences/budget`
 
 Upserts budget preferences for the authenticated user.
@@ -532,18 +586,26 @@ Request body:
 ```json
 {
   "budgetTier": "Standard",
-  "budgetValue": "7000-10000",
+  "budgetValue": "8500",
   "frequency": "Weekly",
   "fluctuationBuffer": "10%"
 }
 ```
+
+Implementation note:
+
+- `budgetTier` is automatically calculated on the backend if not provided or to ensure consistency with amount thresholds.
 
 Success response:
 
 ```json
 {
   "success": true,
-  "message": "Budget preferences saved successfully"
+  "message": "Budget preferences saved successfully",
+  "data": {
+    "budget": { ... },
+    "calculatedTier": "Standard"
+  }
 }
 ```
 
@@ -617,12 +679,7 @@ Success response:
 
 ### `GET /api/meal-plans/current`
 
-Returns the current active plan summary.
-
-Current implementation note:
-
-- The route checks whether an active plan exists for the authenticated user.
-- If one exists, it returns a static `budgetStats` object rather than database-derived statistics.
+Returns the current active plan summary with real budget statistics.
 
 Success response:
 
@@ -631,10 +688,14 @@ Success response:
   "success": true,
   "message": "Meal plan retrieved successfully",
   "data": {
+    "plan": { ... },
     "budgetStats": {
-      "weeklyBudget": "₦45,000",
+      "weeklyBudget": "₦15,000",
+      "currentSpending": "₦12,500",
       "totalMeals": 21,
-      "prepTimeAvg": "35 Mins"
+      "prepTimeAvg": "35 Mins",
+      "exceeded": false,
+      "utilization": 83
     }
   }
 }
@@ -647,11 +708,7 @@ Error responses:
 
 ### `GET /api/meal-plans/current/details`
 
-Placeholder endpoint for current meal-plan details.
-
-Current implementation note:
-
-- The route currently returns an empty object.
+Returns detailed items of the current active meal plan.
 
 Success response:
 
@@ -659,6 +716,15 @@ Success response:
 {
   "success": true,
   "message": "Meal plan details retrieved successfully",
-  "data": {}
+  "data": {
+    "items": [
+      {
+        "id": "item-uuid",
+        "meal": { "name": "Jollof Rice", ... },
+        "day_of_week": "monday",
+        "meal_slot": "lunch"
+      }
+    ]
+  }
 }
 ```
