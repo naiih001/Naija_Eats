@@ -1,6 +1,12 @@
 // import transporter from "../config/mail";
 import emailjs from "@emailjs/nodejs";
 
+console.log('EmailJS config check:', {
+  serviceId: process.env.EMAILJS_SERVICE_ID ? 'SET' : 'MISSING',
+  templateId: process.env.EMAILJS_TEMPLATE_ID ? 'SET' : 'MISSING',
+  publicKey: process.env.EMAILJS_PUBLIC_KEY ? 'SET' : 'MISSING',
+});
+
 const FROM_EMAIL =
   process.env.EMAIL_FROM || "Naija Eats <naija-eats@no-reply.com>";
 
