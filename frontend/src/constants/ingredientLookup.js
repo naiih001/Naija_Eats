@@ -1,8 +1,8 @@
 export const IngredientLookup = {
     // Grains
-    "Bread": { qty: "2 loaves", minPrice: 1000, maxPrice: 1500, category: "Grains" },
+    "Bread": { qty: "2 loaves", minPrice: 500, maxPrice: 2000, category: "Grains" },
     "Rice": { qty: "1 kg", minPrice: 1000, maxPrice: 1500, category: "Grains" },
-    "Garri": { qty: "1 paint", minPrice: 500, maxPrice: 800, category: "Grains" },
+    "Garri": { qty: "1 cup", minPrice: 500, maxPrice: 800, category: "Grains" },
     "Instant Noodles": { qty: "2 packs", minPrice: 700, maxPrice: 1000, category: "Grains" },
     "Corn Flour": { qty: "1 pack", minPrice: 400, maxPrice: 650, category: "Grains" },
     "Yam Flour": { qty: "1 pack", minPrice: 600, maxPrice: 900, category: "Grains" },
@@ -10,7 +10,7 @@ export const IngredientLookup = {
     "Flour": { qty: "500g", minPrice: 500, maxPrice: 750, category: "Grains" },
 
     // Proteins
-    "Egg": { qty: "1/2 crate", minPrice: 1300, maxPrice: 1800, category: "Proteins" },
+    "Egg": { qty: "1 piece", minPrice: 500, maxPrice: 600, category: "Proteins" },
     "Fish": { qty: "1 (M)", minPrice: 700, maxPrice: 1200, category: "Proteins" },
     "Beef": { qty: "1 (S)", minPrice: 400, maxPrice: 700, category: "Proteins" },
     "Beans": { qty: "2 cups", minPrice: 500, maxPrice: 800, category: "Proteins" },

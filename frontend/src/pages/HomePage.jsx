@@ -182,10 +182,13 @@ const HomePage = () => {
                 Pre-order local ingredients for next week's meal plan.
               </p>
             </div>
-            <button className="relative z-10 w-fit bg-black/20 hover:bg-black/30 px-4 py-2 rounded-lg text-xs font-bold transition-all mt-4">
+            <button
+              onClick={() => navigate("/market")}
+              className="relative z-10 w-fit bg-black/20 hover:bg-black/30 px-4 py-2 rounded-lg text-xs font-bold transition-all mt-4"
+            >
               Shop The Market
             </button>
-            <div className="absolute -bottom-4 -right-4 w-32 h-32 bg-white/10 rounded-full blur-2xl group-hover:scale-110 transition-transform" />
+            <div className="absolute -bottom-4 -right-4 w-32 h-32 bg-white/10 rounded-full blur-2xl group-hover:scale-110 transition-transform cursor-pointer" />
           </div>
 
           <div className="bg-[#1A3013] rounded-3xl p-6 text-white flex flex-col justify-between h-auto  relative overflow-hidden group cursor-pointer">
@@ -200,7 +203,10 @@ const HomePage = () => {
                 Create a 7-day plan based on your preferences.
               </p>
             </div>
-            <button className="relative z-10 w-fit bg-white text-[#1A3013] px-4 py-2 rounded-lg text-xs font-bold hover:bg-white/90 transition-all mt-4 ">
+            <button
+              onClick={() => navigate("/weekly-plan")}
+              className="relative z-10 w-fit bg-white text-[#1A3013] px-4 py-2 rounded-lg text-xs font-bold hover:bg-white/90 transition-all mt-4 cursor-pointer"
+            >
               Create Plan
             </button>
             <div className="absolute -bottom-4 -right-4 w-32 h-32 bg-accent-orange/10 rounded-full blur-2xl group-hover:scale-110 transition-transform" />

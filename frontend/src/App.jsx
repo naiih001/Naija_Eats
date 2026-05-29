@@ -20,7 +20,6 @@ import MealDetail from "./pages/MealDetail";
 import SplashScreen from "./pages/onboarding/SplashScreen";
 import { BudgetAlertProvider } from "./context/BudgetAlertContext";
 
-import VerifyEmail from "./pages/auth/VerifyEmail";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 import ResetPassword from "./pages/auth/ResetPassword";
 
@@ -110,7 +109,6 @@ function App() {
         />
         <Route path="/onboarding/meal-plan" element={<MealPlan />} />
         <Route path="*" element={<Navigate to="/" replace />} />
-        <Route path="/verify-email" element={<VerifyEmail />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
       </Routes>

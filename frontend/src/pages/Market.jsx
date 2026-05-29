@@ -55,7 +55,11 @@ const Market = () => {
       (sum, category) =>
         sum +
         category.items.reduce(
-          (catSum, item) => catSum + (item.minPrice || 0),
+          (catSum, item) =>
+            catSum +
+            (item.actualPrice !== undefined
+              ? item.actualPrice
+              : item.minPrice || 0),
           0,
         ),
       0,
@@ -107,6 +111,25 @@ const Market = () => {
           items: category.items.map((item, iIdx) => {
             if (iIdx !== itemIdx) return item;
             return { ...item, bought: !item.bought };
+          }),
+        };
+      }),
+    );
+  };
+
+  const updateItemPrice = (catIdx, itemIdx, value) => {
+    setMarketData((prevData) =>
+      prevData.map((category, cIdx) => {
+        if (cIdx !== catIdx) return category;
+
+        return {
+          ...category,
+          items: category.items.map((item, iIdx) => {
+            if (iIdx !== itemIdx) return item;
+            return {
+              ...item,
+              actualPrice: value ? parseFloat(value) : undefined,
+            };
           }),
         };
       }),
@@ -305,17 +328,33 @@ const Market = () => {
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      {(item.minPrice !== undefined && item.maxPrice !== undefined) && (
-                        <span
-                          className={`text-xs font-bold ${
-                            item.bought
-                              ? "text-text-muted line-through"
-                              : "text-text-primary"
-                          }`}
-                        >
-                          ₦{item.minPrice.toLocaleString()} - ₦{item.maxPrice.toLocaleString()}
-                        </span>
-                      )}
+                      {item.minPrice !== undefined &&
+                        item.maxPrice !== undefined && (
+                          <div className="flex items-center gap-1">
+                            <span className="text-text-primary text-xs font-bold">
+                              ₦
+                            </span>
+                            <input
+                              type="text"
+                              inputMode="numeric"
+                              placeholder={`${item.minPrice.toLocaleString()} - ${item.maxPrice.toLocaleString()}`}
+                              value={
+                                item.actualPrice !== undefined
+                                  ? item.actualPrice
+                                  : ""
+                              }
+                              onChange={(e) =>
+                                updateItemPrice(catIdx, itemIdx, e.target.value)
+                              }
+                              onClick={(e) => e.stopPropagation()}
+                              className={`w-20 bg-transparent border-b border-text-primary/20 text-xs font-bold focus:outline-none focus:border-accent-orange text-center transition-colors ${
+                                item.bought
+                                  ? "text-text-muted line-through"
+                                  : "text-text-primary"
+                              }`}
+                            />
+                          </div>
+                        )}
                       {item.qty && (
                         <span className="bg-[#F8F8DF] text-text-primary text-[10px] font-bold px-3 py-1 rounded-lg border border-text-primary/10">
                           {item.qty}

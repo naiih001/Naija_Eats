@@ -318,6 +318,68 @@ Error responses:
 - `400` if the token is invalid or expired.
 - `500` on server failure.
 
+## Protected Routes Mounted At `/profile`
+
+These routes come from [src/routes/profile.ts](/home/isaac/Documents/caya/Naija_Eats/backend/src/routes/profile.ts:1).
+
+### `GET /profile/me`
+
+Fetches the authenticated user's profile and user account details.
+
+Success response:
+
+```json
+{
+  "success": true,
+  "message": "User profile fetched successfully",
+  "data": {
+    "id": "user-uuid",
+    "email": "user@example.com",
+    "phone_number": "+2348000000000",
+    "profile": {
+      "id": "profile-uuid",
+      "user_id": "user-uuid",
+      "full_name": "Example User",
+      "avatar_url": ""
+    }
+  }
+}
+```
+
+### `PATCH /profile/me`
+
+Updates the authenticated user's profile information.
+
+Request body:
+
+```json
+{
+  "full_name": "New Name",
+  "avatar_url": "new-url",
+  "phone_number": "+2348000000001"
+}
+```
+
+Success response:
+
+```json
+{
+  "success": true,
+  "message": "User profile updated successfully",
+  "data": {
+    "id": "user-uuid",
+    "email": "user@example.com",
+    "phone_number": "+2348000000001",
+    "profile": {
+      "id": "profile-uuid",
+      "user_id": "user-uuid",
+      "full_name": "New Name",
+      "avatar_url": "new-url"
+    }
+  }
+}
+```
+
 ## Protected Routes Mounted At `/`
 
 These routes come from [src/routes/meals.ts](/home/isaac/Documents/caya/Naija_Eats/backend/src/routes/meals.ts:1).

@@ -1,5 +1,10 @@
-import { useState } from "react";
-import { useNavigate, Link, useLocation } from "react-router-dom";
+import { useState, useEffect } from "react";
+import {
+  useNavigate,
+  Link,
+  useLocation,
+  useSearchParams,
+} from "react-router-dom";
 import { toast } from "sonner";
 import Header from "../../components/ui/Header";
 import Button from "../../components/ui/Button";
@@ -9,6 +14,7 @@ import { authService } from "../../services/auth.api";
 const SignIn = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const from = location.state?.from;
 
   const [showPassword, setShowPassword] = useState(false);
@@ -17,6 +23,19 @@ const SignIn = () => {
   const [resending, setResending] = useState(false);
 
   const [formData, setFormData] = useState({ email: "", password: "" });
+
+  // Handle redirect from backend after email verification
+  useEffect(() => {
+    const status = searchParams.get("status");
+    const message = searchParams.get("message");
+    const verified = searchParams.get("verified");
+
+    if (status === "success" && verified === "true") {
+      toast.success(message || "Email verified! You can now sign in.");
+    } else if (status === "error" && message) {
+      toast.error(message || "Verification failed.");
+    }
+  }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;

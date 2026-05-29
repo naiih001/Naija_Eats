@@ -63,6 +63,26 @@ curl -X POST http://localhost:3000/auth/reset-password \
   }'
 ```
 
+## Get User Profile
+
+```bash
+curl http://localhost:3000/profile/me \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+## Update User Profile
+
+```bash
+curl -X PATCH http://localhost:3000/profile/me \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "full_name": "New Name",
+    "avatar_url": "new-url",
+    "phone_number": "+2348000000001"
+  }'
+```
+
 ## Save Combined Preference Payload
 
 ```bash
