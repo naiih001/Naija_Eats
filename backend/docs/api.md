@@ -346,7 +346,7 @@ Success response:
 }
 ```
 
-### `PATCH /profile/me`
+### `PUT /profile/me`
 
 Updates the authenticated user's profile information.
 

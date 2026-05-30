@@ -28,7 +28,7 @@ router.get("/me", authMiddleware, async (req: Request, res: Response) => {
   }
 });
 
-router.patch("/me", authMiddleware, async (req: Request, res: Response) => {
+router.put("/me", authMiddleware, async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
     const { full_name, avatar_url, phone_number } = req.body;
