@@ -73,7 +73,7 @@ curl http://localhost:3000/profile/me \
 ## Update User Profile
 
 ```bash
-curl -X PATCH http://localhost:3000/profile/me \
+curl -X PUT http://localhost:3000/profile/me \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
