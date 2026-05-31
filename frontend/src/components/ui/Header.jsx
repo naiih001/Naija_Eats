@@ -11,17 +11,37 @@ const getInitials = (name, email) => {
       .toUpperCase()
       .slice(0, 2);
   }
-  // Fallback to first letter of email
   if (email && email.trim()) return email[0].toUpperCase();
-  return "?";
+  return null;
 };
+
+const AUTH_ROUTES = [
+  "/sign-in",
+  "/sign-up",
+  "/forgot-password",
+  "/reset-password",
+  "/verify-email",
+];
 
 const Header = ({ toggleSidebar }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const isAuthPage = AUTH_ROUTES.some((route) =>
+    location.pathname.startsWith(route),
+  );
+
   const saved = localStorage.getItem("user");
-  const user = saved ? JSON.parse(saved) : null;
+  const user = saved
+    ? (() => {
+        try {
+          return JSON.parse(saved);
+        } catch {
+          return null;
+        }
+      })()
+    : null;
+
   const fullName = user?.profile?.full_name || user?.full_name || "";
   const email = user?.email || "";
   const initials = getInitials(fullName, email);
@@ -52,14 +72,33 @@ const Header = ({ toggleSidebar }) => {
         />
       </Link>
 
-      <div className="flex items-center gap-6">
-        <button
-          onClick={() => navigate("/profile")}
-          className="w-8 h-8 rounded-full bg-text-primary flex items-center justify-center border-2 border-accent-orange/20 cursor-pointer shrink-0"
-        >
-          <span className="text-xs font-bold text-white">{initials}</span>
-        </button>
-      </div>
+      {/* hide avatar on auth pages */}
+      {!isAuthPage && (
+        <div className="flex items-center gap-6">
+          <button
+            onClick={() => navigate("/profile")}
+            className="w-8 h-8 rounded-full bg-text-primary flex items-center justify-center border-2 border-accent-orange/20 cursor-pointer shrink-0"
+          >
+            {initials ? (
+              <span className="text-xs font-bold text-white">{initials}</span>
+            ) : (
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="white"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+            )}
+          </button>
+        </div>
+      )}
     </header>
   );
 };
