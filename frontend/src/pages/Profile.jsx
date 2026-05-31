@@ -2,6 +2,16 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { authService } from "../services/auth.api";
 
+const getInitials = (name) => {
+  if (!name) return "?";
+  return name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+};
+
 const Profile = () => {
   const navigate = useNavigate();
   const [userData, setUserData] = useState(null);
@@ -13,7 +23,6 @@ const Profile = () => {
         const data = await authService.userInfo();
         setUserData(data.data);
       } catch (err) {
-        // fallback to localStorage if API fails
         const saved = localStorage.getItem("user");
         if (saved) {
           try {
@@ -22,15 +31,11 @@ const Profile = () => {
             console.error("Failed to parse user from localStorage", parseErr);
           }
         }
-        // if token expired redirect to sign in
-        if (err.message?.includes("token")) {
-          navigate("/sign-in");
-        }
+        if (err.message?.includes("token")) navigate("/sign-in");
       } finally {
         setIsLoading(false);
       }
     };
-
     fetchProfile();
   }, [navigate]);
 
@@ -57,6 +62,7 @@ const Profile = () => {
           label: "Budget Settings",
           sublabel: "Manage monthly food spend",
           type: "chevron",
+          onClick: () => navigate("/onboarding/set-budget"),
         },
         {
           icon: (
@@ -76,6 +82,7 @@ const Profile = () => {
           label: "Preferences",
           sublabel: "Dietary needs & allergens",
           type: "chevron",
+          onClick: () => navigate("/onboarding/food-preferences"),
         },
         {
           icon: (
@@ -95,6 +102,7 @@ const Profile = () => {
           label: "Notifications",
           sublabel: "Alerts for meals & offers",
           type: "chevron",
+          onClick: () => {},
         },
       ],
     },
@@ -119,6 +127,7 @@ const Profile = () => {
           ),
           label: "Help Center",
           type: "external",
+          onClick: () => {},
         },
         {
           icon: (
@@ -137,6 +146,7 @@ const Profile = () => {
           ),
           label: "Privacy Policy",
           type: "chevron",
+          onClick: () => {},
         },
       ],
     },
@@ -154,29 +164,22 @@ const Profile = () => {
 
   const fullName =
     userData?.profile?.full_name || userData?.full_name || "NaijaEats User";
-  const avatarUrl = userData?.profile?.avatar_url || null;
   const email = userData?.email || "";
+  const initials = getInitials(fullName);
 
   return (
     <main className="px-5 pt-12 flex flex-col items-center">
       {/* Avatar */}
       <div className="relative">
-        <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-200">
-          {avatarUrl ? (
-            <img
-              src={avatarUrl}
-              alt="Profile"
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <img
-              src="/images/Avatar.png"
-              alt="Profile"
-              className="w-full h-full object-cover"
-            />
-          )}
+        <div className="w-32 h-32 rounded-full bg-text-primary flex items-center justify-center">
+          <span className="text-4xl font-display font-bold text-white">
+            {initials}
+          </span>
         </div>
-        <button className="absolute bottom-1 right-1 bg-accent-orange w-8 h-8 rounded-full flex items-center justify-center border-4 border-[#F8F8DF] text-white">
+        <button
+          onClick={() => navigate("/edit-profile")}
+          className="absolute bottom-1 right-1 bg-accent-orange w-8 h-8 rounded-full flex items-center justify-center border-4 border-[#F8F8DF] text-white"
+        >
           <svg
             width="14"
             height="14"
@@ -209,6 +212,7 @@ const Profile = () => {
               {group.items.map((item, iIdx) => (
                 <button
                   key={iIdx}
+                  onClick={item.onClick}
                   className={`w-full p-4 flex items-center gap-4 hover:bg-gray-50 transition-colors ${
                     iIdx !== group.items.length - 1
                       ? "border-b border-gray-100"

@@ -44,6 +44,8 @@ export const authService = {
     return data;
   },
 
+  // verify-email GET redirects to /verify-email?status=...
+  // verify-email POST returns JSON — used by VerifyEmail.jsx
   async verifyEmail(token) {
     const response = await fetch(`${API_BASE_URL}/auth/verify-email/${token}`, {
       method: "POST",
@@ -129,7 +131,6 @@ export const authService = {
       throw new Error(data.message || "Failed to fetch user info");
     }
 
-    // Update localStorage with fresh data from server
     if (data.data) {
       localStorage.setItem("user", JSON.stringify(data.data));
     }
@@ -137,7 +138,7 @@ export const authService = {
     return data;
   },
 
-  // PATCH /profile/me — update profile
+  // PUT /profile/me — update profile
   async updateProfile(updates) {
     const token = localStorage.getItem("token");
 
@@ -146,7 +147,7 @@ export const authService = {
     }
 
     const response = await fetch(`${API_BASE_URL}/profile/me`, {
-      method: "PATCH",
+      method: "PUT",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
@@ -160,7 +161,6 @@ export const authService = {
       throw new Error(data.message || "Failed to update profile");
     }
 
-    // Update localStorage with new data
     if (data.data) {
       localStorage.setItem("user", JSON.stringify(data.data));
     }
