@@ -2,6 +2,56 @@
 
 The Express app is defined in [src/app.ts](/home/isaac/Documents/caya/Naija_Eats/backend/src/app.ts:1).
 
+## Timetable Routes
+
+
+### `GET /timetable/generate`
+Retrieves the active timetable for the authenticated user.
+
+**Success Response:**
+```json
+{
+  "success": true,
+  "message": "Timetable retrieved successfully",
+  "data": {
+    "id": "plan-uuid",
+    "status": "active",
+    "items": [
+      {
+        "id": "item-uuid",
+        "meal": { "name": "Jollof Rice", "category": "Main", "prep_time_mins": 60 },
+        "day_of_week": "Monday",
+        "meal_slot": "Breakfast"
+      }
+    ]
+  }
+}
+```
+
+### `POST /timetable/generate`
+Generates a new random timetable, deleting any existing active one.
+
+**Request:**
+```http
+POST /timetable/generate
+Authorization: Bearer <jwt_token>
+```
+
+**Success Response:**
+```json
+{
+  "success": true,
+  "message": "Timetable generated successfully",
+  "data": {
+    "id": "new-plan-uuid",
+    "status": "active",
+    "items": [...]
+  }
+}
+```
+
+> **Warning:** These routes are available for timetable generation but do not integrate with the budget statistics (`budgetStats`) provided by the `/api/meal-plans/` endpoints.
+
 ## Base URL
 
 Local development defaults to:
@@ -728,3 +778,53 @@ Success response:
   }
 }
 ```
+
+## Timetable Routes
+
+
+### `GET /timetable/generate`
+Retrieves the active timetable for the authenticated user.
+
+**Success Response:**
+```json
+{
+  "success": true,
+  "message": "Timetable retrieved successfully",
+  "data": {
+    "id": "plan-uuid",
+    "status": "active",
+    "items": [
+      {
+        "id": "item-uuid",
+        "meal": { "name": "Jollof Rice", "category": "Main", "prep_time_mins": 60 },
+        "day_of_week": "Monday",
+        "meal_slot": "Breakfast"
+      }
+    ]
+  }
+}
+```
+
+### `POST /timetable/generate`
+Generates a new random timetable, deleting any existing active one.
+
+**Request:**
+```http
+POST /timetable/generate
+Authorization: Bearer <jwt_token>
+```
+
+**Success Response:**
+```json
+{
+  "success": true,
+  "message": "Timetable generated successfully",
+  "data": {
+    "id": "new-plan-uuid",
+    "status": "active",
+    "items": [...]
+  }
+}
+```
+
+> **Warning:** These routes are available for timetable generation but do not integrate with the budget statistics (`budgetStats`) provided by the `/api/meal-plans/` endpoints.
