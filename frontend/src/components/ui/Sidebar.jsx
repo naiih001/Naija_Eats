@@ -9,33 +9,52 @@ import {
 } from "../../constants/icons";
 import { authService } from "../../services/auth.api";
 
+const getInitials = (name, email) => {
+  if (name && name.trim()) {
+    return name
+      .trim()
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  }
+  if (email && email.trim()) return email[0].toUpperCase();
+  return "?";
+};
+
 const Sidebar = ({ isExpanded }) => {
   const location = useLocation();
-  const [userName, setUserName] = useState("John Doe");
+  const [userName, setUserName] = useState("");
+  const [userEmail, setUserEmail] = useState("");
 
+  // load from localStorage first
   useEffect(() => {
     const savedUser = localStorage.getItem("user");
     if (savedUser) {
       try {
         const user = JSON.parse(savedUser);
-        if (user.full_name) {
-          setUserName(user.full_name);
-        }
+        setUserName(user?.profile?.full_name || user?.full_name || "");
+        setUserEmail(user?.email || "");
       } catch (e) {
         console.error("Failed to parse user data", e);
       }
     }
   }, []);
 
+  // fetch fresh from API
   useEffect(() => {
-    const savedUser = async () => {
-      const data = await authService.userInfo();
-      console.log("User info data in Sidebar:", data);
-      if (data.data?.user?.full_name) {
-        setUserName(data.data.user.full_name);
+    const fetchUser = async () => {
+      try {
+        const data = await authService.userInfo();
+        const user = data.data;
+        setUserName(user?.profile?.full_name || user?.full_name || "");
+        setUserEmail(user?.email || "");
+      } catch {
+        // keep localStorage values if fetch fails
       }
     };
-    savedUser();
+    fetchUser();
   }, [location.pathname]);
 
   const navItems = [
@@ -45,6 +64,8 @@ const Sidebar = ({ isExpanded }) => {
     { label: "Profile", icon: UserIcon, path: "/profile" },
   ];
 
+  const initials = getInitials(userName, userEmail);
+
   return (
     <aside
       className={`fixed lg:static top-0 left-0 h-screen bg-bg-background border-r border-text-muted/10 transition-all duration-300 z-50 flex flex-col ${
@@ -52,21 +73,19 @@ const Sidebar = ({ isExpanded }) => {
       } ${!isExpanded && "lg:w-20"} hidden lg:flex`}
     >
       {/* User Profile Info */}
-      <div
-        className={`p-6 mb-4 flex items-center gap-3 overflow-hidden transition-all duration-300`}
-      >
-        <div className="w-10 h-10 rounded-full overflow-hidden bg-text-muted/60 shrink-0">
-          <img
-            src="/images/Avatar.png"
-            alt={userName}
-            className="w-full h-full object-cover"
-          />
+      <div className="p-6 mb-4 flex items-center gap-3 overflow-hidden transition-all duration-300">
+        {/* initials avatar — same style as Header */}
+        <div className="w-10 h-10 rounded-full bg-text-primary flex items-center justify-center border-2 border-accent-orange/20 shrink-0">
+          <span className="text-xs font-bold text-white">{initials}</span>
         </div>
+
         <div
-          className={`flex flex-col transition-opacity duration-300 ${isExpanded ? "opacity-100" : "opacity-0"}`}
+          className={`flex flex-col transition-opacity duration-300 ${
+            isExpanded ? "opacity-100" : "opacity-0"
+          }`}
         >
           <span className="text-sm font-bold text-text-primary whitespace-nowrap">
-            {userName}
+            {userName || userEmail || "NaijaEats User"}
           </span>
           <span className="text-[10px] text-text-muted whitespace-nowrap">
             Premium Member
@@ -92,7 +111,11 @@ const Sidebar = ({ isExpanded }) => {
             >
               <div className="shrink-0">
                 <Icon
-                  className={`w-6 h-6 ${isActive ? "text-accent-orange" : "text-text-muted group-hover:text-text-primary"}`}
+                  className={`w-6 h-6 ${
+                    isActive
+                      ? "text-accent-orange"
+                      : "text-text-muted group-hover:text-text-primary"
+                  }`}
                 />
               </div>
               <span

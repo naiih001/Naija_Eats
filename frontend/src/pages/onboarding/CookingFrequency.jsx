@@ -47,10 +47,10 @@ const CookingFrequency = () => {
     }
 
     const getFrequencyPayload = () => ({
-      household_size: parseInt(householdSize),
-      daily_meals: parseInt(dailyMeals),
-      is_dessert: includeDesserts,
-      cooking_frequency: FREQUENCY_MAP[selectedFrequencies[0]] || "daily",
+      householdSize: householdSize,
+      dailyMeals: dailyMeals,
+      includeDesserts: includeDesserts,
+      cookingFrequencies: selectedFrequencies[0] || "Daily (7 Days)",
     });
 
     // save to localStorage — API call happens at the end in FoodPreferences

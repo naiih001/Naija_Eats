@@ -16,10 +16,12 @@ import WeeklyPlan from "./pages/onboarding/WeeklyPlan";
 import Market from "./pages/Market";
 import MenuPage from "./pages/MenuPage";
 import Profile from "./pages/Profile";
+import EditProfile from "./pages/EditProfile";
 import MealDetail from "./pages/MealDetail";
 import SplashScreen from "./pages/onboarding/SplashScreen";
 import { BudgetAlertProvider } from "./context/BudgetAlertContext";
 
+import VerifyEmail from "./pages/auth/VerifyEmail";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 import ResetPassword from "./pages/auth/ResetPassword";
 
@@ -111,6 +113,8 @@ function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/edit-profile" element={<EditProfile />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
       </Routes>
     </BudgetAlertProvider>
   );
