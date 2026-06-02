@@ -6,6 +6,7 @@ import mealsRoutes from "./routes/meals";
 import { router as authRoutes } from "./routes/auth";
 import onboardingRoutes from "./routes/onboarding";
 import profileRoutes from "./routes/profile";
+import timetableRoutes from "./routes/timetable";
 import { authMiddleware } from "./middleware/auth";
 
 const app: Application = express();
@@ -30,6 +31,7 @@ app.get("/health", (req: Request, res: Response) => {
 
 app.use("/auth", authRoutes);
 app.use("/meals", authMiddleware, mealsRoutes);
+app.use("/timetable", authMiddleware, timetableRoutes);
 app.use("/api", authMiddleware, onboardingRoutes);
 app.use("/profile", profileRoutes);
 
