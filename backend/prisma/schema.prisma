@@ -72,6 +72,7 @@ model meals {
   price_max      Decimal?
   prep_time_mins Int?
   dietary_tags   String?
+  cuisine        String?
   instructions   String?
   plan_items     meal_plan_items[]
 }
