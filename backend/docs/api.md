@@ -19,7 +19,15 @@ Retrieves the active timetable for the authenticated user.
     "items": [
       {
         "id": "item-uuid",
-        "meal": { "name": "Jollof Rice", "category": "Main", "prep_time_mins": 60 },
+        "meal": { 
+          "name": "Jollof Rice", 
+          "category": "Main", 
+          "prep_time_mins": 60,
+          "price_min": 1500,
+          "price_max": 2500,
+          "dietary_tags": "",
+          "instructions": ""
+        },
         "day_of_week": "Monday",
         "meal_slot": "Breakfast"
       }
@@ -45,7 +53,22 @@ Authorization: Bearer <jwt_token>
   "data": {
     "id": "new-plan-uuid",
     "status": "active",
-    "items": [...]
+    "items": [
+      {
+        "id": "item-uuid",
+        "meal": { 
+          "name": "Jollof Rice", 
+          "category": "Main", 
+          "prep_time_mins": 60,
+          "price_min": 1500,
+          "price_max": 2500,
+          "dietary_tags": "",
+          "instructions": ""
+        },
+        "day_of_week": "Monday",
+        "meal_slot": "Breakfast"
+      }
+    ]
   }
 }
 ```
@@ -796,7 +819,15 @@ Retrieves the active timetable for the authenticated user.
     "items": [
       {
         "id": "item-uuid",
-        "meal": { "name": "Jollof Rice", "category": "Main", "prep_time_mins": 60 },
+        "meal": { 
+          "name": "Jollof Rice", 
+          "category": "Main", 
+          "prep_time_mins": 60,
+          "price_min": 1500,
+          "price_max": 2500,
+          "dietary_tags": "",
+          "instructions": ""
+        },
         "day_of_week": "Monday",
         "meal_slot": "Breakfast"
       }
@@ -822,7 +853,22 @@ Authorization: Bearer <jwt_token>
   "data": {
     "id": "new-plan-uuid",
     "status": "active",
-    "items": [...]
+    "items": [
+      {
+        "id": "item-uuid",
+        "meal": { 
+          "name": "Jollof Rice", 
+          "category": "Main", 
+          "prep_time_mins": 60,
+          "price_min": 1500,
+          "price_max": 2500,
+          "dietary_tags": "",
+          "instructions": ""
+        },
+        "day_of_week": "Monday",
+        "meal_slot": "Breakfast"
+      }
+    ]
   }
 }
 ```
