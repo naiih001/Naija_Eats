@@ -19,7 +19,19 @@ router.get("/generate", async (req: Request, res: Response) => {
       return _res.error(404, res, "No active timetable found");
     }
 
-    return _res.success(200, res, "Timetable retrieved successfully", activePlan);
+    const formattedPlan = {
+      ...activePlan,
+      items: activePlan.items.map((item) => ({
+        ...item,
+        meal: {
+          ...item.meal,
+          price_min: item.meal.price_min ? Number(item.meal.price_min) : null,
+          price_max: item.meal.price_max ? Number(item.meal.price_max) : null,
+        },
+      })),
+    };
+
+    return _res.success(200, res, "Timetable retrieved successfully", formattedPlan);
   } catch (err) {
     console.error(err);
     return _res.error(500, res, "Failed to retrieve timetable");
@@ -44,8 +56,7 @@ router.post("/generate", async (req: Request, res: Response) => {
         throw new Error("No meals available to generate timetable");
       }
 
-      // 3. Create new plan
-      const plan = await tx.meal_plans.create({
+      const createdPlan = await tx.meal_plans.create({
         data: { user_id: user.id, status: "active" },
       });
 
@@ -58,7 +69,7 @@ router.post("/generate", async (req: Request, res: Response) => {
         for (const slot of slots) {
           const randomMeal = allMeals[Math.floor(Math.random() * allMeals.length)];
           itemsData.push({
-            plan_id: plan.id,
+            plan_id: createdPlan.id,
             meal_id: randomMeal.id,
             day_of_week: day,
             meal_slot: slot,
@@ -68,10 +79,24 @@ router.post("/generate", async (req: Request, res: Response) => {
 
       await tx.meal_plan_items.createMany({ data: itemsData });
 
-      return await tx.meal_plans.findUnique({
-        where: { id: plan.id },
+      const planWithMeals = await tx.meal_plans.findUnique({
+        where: { id: createdPlan.id },
         include: { items: { include: { meal: true } } },
       });
+
+      const formattedPlan = {
+        ...planWithMeals,
+        items: planWithMeals!.items.map((item) => ({
+          ...item,
+          meal: {
+            ...item.meal,
+            price_min: item.meal.price_min ? Number(item.meal.price_min) : null,
+            price_max: item.meal.price_max ? Number(item.meal.price_max) : null,
+          },
+        })),
+      };
+
+      return formattedPlan;
     });
 
     return _res.success(201, res, "Timetable generated successfully", newPlan);
