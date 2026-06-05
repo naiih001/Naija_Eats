@@ -14,4 +14,10 @@ if (!connectionString) {
 const pool = new pg.Pool({ connectionString });
 const adapter = new PrismaPg(pool);
 
-export const prisma = new PrismaClient({ adapter });
+export const prisma = new PrismaClient({
+  adapter,
+  transactionOptions: {
+    maxWait: 5000,
+    timeout: 15000,
+  },
+});

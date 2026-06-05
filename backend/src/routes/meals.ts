@@ -64,17 +64,35 @@ router.post("/preference", async (req: Request, res: Response) => {
 
 // GET /meals
 // Returns all meals from the catalogue, with optional filtering by category
-// Query params: ?category=breakfast|lunch|dinner
+// Query params: ?category=breakfast|lunch|dinner&page=1&limit=20
 router.get("/meals", async (req: Request, res: Response) => {
   const { category } = req.query;
+  const page = Math.max(1, parseInt(req.query.page as string) || 1);
+  const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
+  const skip = (page - 1) * limit;
 
   try {
-    const meals = await prisma.meals.findMany({
-      where: category ? { category: String(category) } : {},
-      orderBy: { name: "asc" },
-    });
+    const where = category ? { category: String(category) } : {};
 
-    return _res.success(200, res, "Meals retrieved successfully", meals);
+    const [meals, total] = await Promise.all([
+      prisma.meals.findMany({
+        where,
+        orderBy: { name: "asc" },
+        skip,
+        take: limit,
+      }),
+      prisma.meals.count({ where }),
+    ]);
+
+    return _res.success(200, res, "Meals retrieved successfully", {
+      meals,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    });
   } catch (err) {
     console.error(err);
     return _res.error(500, res, "Failed to retrieve meals");
