@@ -33,7 +33,7 @@ app.use("/auth", authRoutes);
 app.use("/meals", authMiddleware, mealsRoutes);
 app.use("/timetable", authMiddleware, timetableRoutes);
 app.use("/api", authMiddleware, onboardingRoutes);
-app.use("/profile", profileRoutes);
+app.use("/profile", authMiddleware, profileRoutes);
 
 // Catch-all 404 handler
 app.use((req, res) => {

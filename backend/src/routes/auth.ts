@@ -193,7 +193,10 @@ router.post("/login", async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
 
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await prisma.user.findUnique({
+      where: { email },
+      include: { profile: true },
+    });
     if (!user || !(await bcrypt.compare(password, user.password))) {
       return _res.error(401, res, "Invalid email or password");
     }
@@ -204,7 +207,17 @@ router.post("/login", async (req: Request, res: Response) => {
 
     const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: "24h" });
 
-    return _res.success(200, res, "User logged in successfully", { token });
+    return _res.success(200, res, "User logged in successfully", {
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        phone_number: user.phone_number,
+        isVerified: user.isVerified,
+        created_at: user.created_at,
+        profile: user.profile,
+      },
+    });
   } catch (err) {
     console.error(err);
     return _res.error(500, res, "Server error");
