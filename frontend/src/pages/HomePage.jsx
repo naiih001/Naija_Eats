@@ -1,8 +1,6 @@
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
-  HeartIcon,
-  StopWatch,
-  BoltIcon,
   ChevronRightIcon,
   PlusIcon,
   GenerateIcon,
@@ -11,60 +9,80 @@ import {
   ChartIcon,
   BookmarkIcon,
   TrendUpIcon,
-  // TrendDownIcon,
+  StopWatch,
 } from "../constants/icons";
-import { WeekPlan } from "../constants/weekPlan";
+import transformTimetable from "../constants/weekPlan";
+import { planService } from "../services/plan.api";
 import Button from "../components/ui/Button";
+import EmptyState from "./EmptyState";
 
+/* ─── module-level helpers ─────────────────────────────────────────────── */
+const SLOT_ORDER = ["Breakfast", "Lunch", "Dinner"];
+
+const SLOT_META = {
+  Breakfast: { emoji: "🌅", label: "Breakfast" },
+  Lunch: { emoji: "☀️", label: "Lunch" },
+  Dinner: { emoji: "🌙", label: "Dinner" },
+};
+
+function getTodayName() {
+  return new Intl.DateTimeFormat("en-US", { weekday: "long" }).format(
+    new Date(),
+  );
+}
+
+function normaliseSlot(type = "") {
+  return type.charAt(0).toUpperCase() + type.slice(1).toLowerCase();
+}
+
+/* ─── HomePage ─────────────────────────────────────────────────────────── */
 const HomePage = () => {
   const navigate = useNavigate();
+  const [weekPlan, setWeekPlan] = useState([]);
+  const [todayMeals, setTodayMeals] = useState([]);
+  const [planLoading, setPlanLoading] = useState(true);
+  const [hasPlan, setHasPlan] = useState(true);
 
   const categories = ["All", "Yoruba", "Igbo", "Hausa"];
 
+  useEffect(() => {
+    const fetchPlan = async () => {
+      try {
+        const data = await planService.getTimetable();
+        const transformed = transformTimetable(data);
+
+        if (transformed.length === 0) {
+          setHasPlan(false);
+        } else {
+          setWeekPlan(transformed);
+          setHasPlan(true);
+
+          const todayDay = transformed.find((d) => d.day === getTodayName());
+          if (todayDay?.meals?.length) {
+            const sorted = [...todayDay.meals].sort(
+              (a, b) =>
+                SLOT_ORDER.indexOf(normaliseSlot(a.type)) -
+                SLOT_ORDER.indexOf(normaliseSlot(b.type)),
+            );
+            setTodayMeals(sorted);
+          }
+        }
+      } catch {
+        setHasPlan(false);
+      } finally {
+        setPlanLoading(false);
+      }
+    };
+    fetchPlan();
+  }, []);
+
   return (
     <div className="flex flex-col gap-10 p-6 lg:p-10 animate-in fade-in duration-700">
-      {/* Hero Section */}
-      <section className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-        <div
-          onClick={() => navigate("/meal/jollof-rice-and-grilled-fish")}
-          className="lg:col-span-5 bg-text-primary rounded-3xl overflow-hidden text-white cursor-pointer group"
-        >
-          <div className="relative h-70">
-            <img
-              src="/images/jollof_fish_plantains.png"
-              alt="Jollof Rice & Grilled Fish"
-              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-            />
-            <div className="absolute top-4 left-4 bg-accent-orange text-white px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest">
-              Monday
-            </div>
-          </div>
-          <div className="p-4 ">
-            <div className="flex justify-between items-center mb-3">
-              <h2 className="text-xl lg:text-subheading font-display font-bold">
-                Jollof Rice & Grilled Fish
-              </h2>
-              <HeartIcon className="w-8 h-8 text-accent-orange fill-accent-orange" />
-            </div>
-            <p className="text-text-muted text-base lg:text-lg mb-6 leading-relaxed max-w-xl">
-              A decade proven meal that has served various generations of
-              African Heritage.
-            </p>
-            <div className="flex gap-4 text-sm font-medium opacity-80">
-              <div className="flex items-center gap-2">
-                <StopWatch className="w-5 h-5" />
-                <span>45 mins</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <BoltIcon className="w-5 h-5" />
-                <span>520 kcal</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="lg:col-span-7 bg-transparent rounded-3xl border-2 border-text-primary p-8 flex flex-col justify-between">
-          <div className="flex flex-col gap-6">
+      {/* ── Hero: Today's Meals ──────────────────────────────────────────── */}
+      <section className="flex flex-col gap-4">
+        {/* header */}
+        <div className="flex justify-between items-end">
+          <div className="flex flex-col gap-1">
             <div className="inline-flex items-center gap-2 bg-[#E8F5E9] text-text-primary px-3 py-1 rounded-full w-fit">
               <div className="w-4 h-4 bg-text-primary rounded-full flex items-center justify-center text-[8px] text-white">
                 <StarIcon />
@@ -73,39 +91,98 @@ const HomePage = () => {
                 The Elite Taste of Nigeria
               </span>
             </div>
-            <h1 className="text-subheading lg:text-[42px] font-display font-bold text-text-primary leading-tight">
-              Heritage Flavors, <br />
-              <span className="text-[#8B4513] font-display!">
-                Modern <br /> Convenience
+            <h1 className="text-subheading lg:text-[38px] font-display font-bold text-text-primary leading-tight mt-1">
+              Today&apos;s Meals
+              <span className="block text-[#8B4513] font-display text-2xl lg:text-3xl font-semibold">
+                {getTodayName()} &middot;{" "}
+                {hasPlan && todayMeals.length > 0
+                  ? `${todayMeals.length} meals`
+                  : "No active plan"}
               </span>
             </h1>
-            <p className="text-text-muted leading-relaxed font-inter">
-              Experience curated culinary journeys with our premium meal
-              planning and authentic local grocery delivery service designed for
-              the modern Nigerian home.
-            </p>
           </div>
-
-          <div className="flex flex-col gap-3 mt-8">
+          <div className="flex flex-col gap-2 shrink-0">
             <Button
-              className="w-full py-4 text-sm font-bold flex items-center justify-center gap-2"
+              className="py-3 px-5 text-sm font-bold flex items-center gap-2"
               onClick={() => navigate("/menu-page")}
             >
               View Menu <ChevronRightIcon className="w-4 h-4" />
             </Button>
             <button
-              className="w-full py-4 border-2 border-text-primary text-text-primary rounded-xl font-bold text-sm hover:bg-text-primary hover:text-white transition-all cursor-pointer"
+              className="py-3 px-5 border-2 border-text-primary text-text-primary rounded-xl font-bold text-sm hover:bg-text-primary hover:text-white transition-all cursor-pointer"
               onClick={() => navigate("/market")}
             >
-              Explore Market
+              Market
             </button>
           </div>
         </div>
+
+        {/* meal cards — inline JSX, no sub-component */}
+        {planLoading ? (
+          /* skeleton */
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+            {[0, 1, 2].map((i) => (
+              <div
+                key={i}
+                className={`rounded-3xl bg-text-muted/10 animate-pulse ${i === 0 ? "lg:col-span-2 h-64" : "lg:col-span-1 h-64"}`}
+              />
+            ))}
+          </div>
+        ) : !hasPlan || todayMeals.length === 0 ? (
+          <EmptyState />
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+            {todayMeals.map((meal, idx) => {
+              const slotLabel = normaliseSlot(meal.type);
+              const meta =
+                SLOT_META[slotLabel] ?? { emoji: "🍽️", label: slotLabel };
+              return (
+                <div
+                  key={meal.slug ?? idx}
+                  onClick={() => navigate(`/meal/${meal.slug}`)}
+                  className={`relative rounded-3xl overflow-hidden text-white cursor-pointer group transition-transform hover:-translate-y-1 duration-300 shadow-md ${idx === 0 ? "lg:col-span-2" : "lg:col-span-1"}`}
+                  style={{ minHeight: "240px" }}
+                >
+                  <img
+                    src={meal.image || "/images/dish.webp"}
+                    alt={meal.name}
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+
+                  {/* slot badge */}
+                  <div className="absolute top-4 left-4 flex items-center gap-1.5 bg-black/40 backdrop-blur-sm px-3 py-1 rounded-full border border-white/20">
+                    <span className="text-xs">{meta.emoji}</span>
+                    <span className="text-[10px] font-bold uppercase tracking-widest">
+                      {meta.label}
+                    </span>
+                  </div>
+
+                  {/* day badge on first card */}
+                  {idx === 0 && (
+                    <div className="absolute top-4 right-4 bg-accent-orange text-white px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest">
+                      {getTodayName()}
+                    </div>
+                  )}
+
+                  <div className="absolute bottom-0 left-0 right-0 p-4">
+                    <h3 className="text-lg font-display font-bold leading-tight mb-0.5">
+                      {meal.name}
+                    </h3>
+                    <span className="text-[11px] font-bold text-accent-orange">
+                      {meal.price}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </section>
 
-      {/* Weekly Plan & Sidebar Cards */}
+      {/* ── Weekly Plan & Sidebar Cards ─────────────────────────────────── */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Weekly Plan */}
+        {/* 3-day plan strip */}
         <div className="lg:col-span-8 bg-white rounded-3xl p-8 border border-text-muted/5">
           <div className="flex justify-between items-end mb-8">
             <div className="flex flex-col gap-1">
@@ -113,7 +190,9 @@ const HomePage = () => {
                 Your Weekly Plan
               </h2>
               <p className="text-xs text-text-muted font-medium">
-                OCT 23 - OCT 29 • 85% Completed
+                {hasPlan && weekPlan.length > 0
+                  ? `${weekPlan.length} days planned`
+                  : "No active plan"}
               </p>
             </div>
             <Link
@@ -125,61 +204,90 @@ const HomePage = () => {
           </div>
 
           <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2">
-            {WeekPlan.slice(0, 3).map((day, idx) => (
-              <div
-                key={idx}
-                className="flex flex-col gap-3 min-w-40 shrink-0 group cursor-pointer"
-              >
-                <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest ml-1">
-                  {day.day}
-                </span>
+            {planLoading ? (
+              [0, 1, 2].map((i) => (
                 <div
-                  className={`relative rounded-2xl overflow-hidden h-48 border-2 transition-all ${idx === 1 ? "border-accent-orange ring-4 ring-accent-orange/10" : "border-transparent"}`}
+                  key={i}
+                  className="flex flex-col gap-3 min-w-40 shrink-0 animate-pulse"
                 >
-                  <img
-                    src={day.meals[0].image || "/images/dish.webp"}
-                    alt={day.meals[0].name}
-                    className="w-full h-full object-cover"
-                  />
-                  {idx === 1 && (
-                    <div className="absolute top-2 right-2 w-5 h-5 bg-accent-orange rounded-full flex items-center justify-center text-[10px] font-bold text-white ">
-                      !
-                    </div>
-                  )}
+                  <div className="h-3 w-16 bg-text-muted/20 rounded-full ml-1" />
+                  <div className="h-48 w-full bg-text-muted/10 rounded-2xl" />
+                  <div className="h-3 w-24 bg-text-muted/20 rounded-full ml-1" />
+                  <div className="h-2 w-16 bg-text-muted/10 rounded-full ml-1" />
                 </div>
-                <div className="flex flex-col gap-0.5 ml-1">
-                  <h4 className="text-sm font-bold text-text-primary line-clamp-1">
-                    {day.meals[0].name}
-                  </h4>
-                  <span
-                    className={`text-[10px] font-bold uppercase tracking-wider ${idx === 1 ? "text-accent-orange" : "text-[#5C8C4C]"}`}
-                  >
-                    {day.meals[0].type}
+              ))
+            ) : !hasPlan ? (
+              <div className="w-full">
+                <EmptyState />
+              </div>
+            ) : (
+              <>
+                {weekPlan.slice(0, 3).map((day, idx) => {
+                  const isToday = day.day === getTodayName();
+                  return (
+                    <div
+                      key={idx}
+                      onClick={() => navigate(`/meal/${day.meals[0].slug}`)}
+                      className="flex flex-col gap-3 min-w-40 shrink-0 group cursor-pointer"
+                    >
+                      <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest ml-1">
+                        {day.day}
+                      </span>
+                      <div
+                        className={`relative rounded-2xl overflow-hidden h-48 border-2 transition-all ${isToday ? "border-accent-orange ring-4 ring-accent-orange/10" : "border-transparent"}`}
+                      >
+                        <img
+                          src={day.meals[0].image || "/images/dish.webp"}
+                          alt={day.meals[0].name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                        {isToday && (
+                          <div className="absolute top-2 right-2 w-5 h-5 bg-accent-orange rounded-full flex items-center justify-center text-[10px] font-bold text-white">
+                            !
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex flex-col gap-0.5 ml-1">
+                        <h4 className="text-sm font-bold text-text-primary line-clamp-1">
+                          {day.meals[0].name}
+                        </h4>
+                        <span
+                          className={`text-[10px] font-bold uppercase tracking-wider ${isToday ? "text-accent-orange" : "text-[#5C8C4C]"}`}
+                        >
+                          {day.meals[0].type}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {/* view full plan */}
+                <div
+                  onClick={() => navigate("/weekly-plan")}
+                  className="flex flex-col justify-center items-center gap-3 min-w-40 h-60 rounded-3xl border-2 border-dashed border-text-muted/20 bg-text-muted/5 text-text-muted group hover:bg-text-muted/10 transition-colors cursor-pointer shrink-0"
+                >
+                  <div className="w-10 h-10 rounded-full border-2 border-text-muted/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <PlusIcon className="w-6 h-6" />
+                  </div>
+                  <span className="text-xs font-bold uppercase tracking-widest text-center px-2">
+                    View Full Plan
                   </span>
                 </div>
-              </div>
-            ))}
-            <div className="flex flex-col justify-center items-center gap-3 min-w-40 h-60 rounded-3xl border-2 border-dashed border-text-muted/20 bg-text-muted/5 text-text-muted group hover:bg-text-muted/10 transition-colors cursor-pointer">
-              <div className="w-10 h-10 rounded-full border-2 border-text-muted/20 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <PlusIcon className="w-6 h-6" />
-              </div>
-              <span className="text-xs font-bold uppercase tracking-widest">
-                Plan Thursday
-              </span>
-            </div>
+              </>
+            )}
           </div>
         </div>
 
-        {/* Right Action Cards */}
+        {/* action cards */}
         <div className="lg:col-span-4 flex flex-col gap-4">
-          <div className="bg-accent-orange rounded-3xl p-6 text-white flex flex-col justify-between h-auto  relative overflow-hidden group cursor-pointer">
+          <div className="bg-accent-orange rounded-3xl p-6 text-white flex flex-col justify-between h-auto relative overflow-hidden group cursor-pointer">
             <div className="relative z-10">
               <BasketIcon className="w-8 h-8 mb-1 opacity-80" />
               <h3 className="text-xl font-display font-bold mb-1">
                 Market Day
               </h3>
               <p className="text-[10px] font-medium text-white/80 max-w-45">
-                Pre-order local ingredients for next week's meal plan.
+                Pre-order local ingredients for next week&apos;s meal plan.
               </p>
             </div>
             <button
@@ -188,13 +296,13 @@ const HomePage = () => {
             >
               Shop The Market
             </button>
-            <div className="absolute -bottom-4 -right-4 w-32 h-32 bg-white/10 rounded-full blur-2xl group-hover:scale-110 transition-transform cursor-pointer" />
+            <div className="absolute -bottom-4 -right-4 w-32 h-32 bg-white/10 rounded-full blur-2xl group-hover:scale-110 transition-transform" />
           </div>
 
-          <div className="bg-[#1A3013] rounded-3xl p-6 text-white flex flex-col justify-between h-auto  relative overflow-hidden group cursor-pointer">
+          <div className="bg-[#1A3013] rounded-3xl p-6 text-white flex flex-col justify-between h-auto relative overflow-hidden group cursor-pointer">
             <div className="relative z-10">
               <div className="w-8 h-8 mb-4 opacity-80 flex items-center justify-center">
-                <GenerateIcon className={"w-8 h-8 text-white"} />
+                <GenerateIcon className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-xl font-display font-bold mb-1">
                 Auto-Generate
@@ -214,7 +322,7 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* Trending Recipes */}
+      {/* ── Trending Recipes ─────────────────────────────────────────────── */}
       <section className="flex flex-col gap-8">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <h2 className="text-2xl lg:text-3xl font-display font-bold text-text-primary">
@@ -224,11 +332,7 @@ const HomePage = () => {
             {categories.map((cat) => (
               <button
                 key={cat}
-                className={`px-5 py-2 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                  cat === "All"
-                    ? "bg-[#D1D89D] text-text-primary"
-                    : "bg-white border border-text-muted/10 text-text-muted hover:border-text-primary hover:text-text-primary"
-                }`}
+                className={`px-5 py-2 rounded-full text-xs font-bold transition-all cursor-pointer ${cat === "All" ? "bg-[#D1D89D] text-text-primary" : "bg-white border border-text-muted/10 text-text-muted hover:border-text-primary hover:text-text-primary"}`}
               >
                 {cat}
               </button>
@@ -237,7 +341,6 @@ const HomePage = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Large Trending Recipe */}
           <div className="lg:col-span-7 bg-white rounded-4xl overflow-hidden group cursor-pointer border border-text-muted/5">
             <div className="relative h-100 lg:h-125">
               <img
@@ -245,14 +348,13 @@ const HomePage = () => {
                 alt="Fisherman's Harvest Soup"
                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
               />
-              <div className="absolute h-inherit inset-0 bg-linear-to-t from-black/80 via-transparent to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
               <div className="absolute bottom-8 left-8 right-8 text-white">
-                <span className=" px-3 py-1.5 bg-accent-orange rounded-xl text-white mb-4 inline-block">
+                <span className="px-3 py-1.5 bg-accent-orange rounded-xl text-white mb-4 inline-block">
                   Trending
                 </span>
-
                 <h3 className="text-3xl lg:text-4xl font-display font-bold mb-2">
-                  Fisherman's Harvest Soup
+                  Fisherman&apos;s Harvest Soup
                 </h3>
                 <p className="text-white/70 text-sm mb-6 max-w-md line-clamp-2">
                   A rich, aromatic seafood delicacy from the coastal regions,
@@ -279,21 +381,20 @@ const HomePage = () => {
             </div>
           </div>
 
-          {/* Grid of smaller recipes */}
           <div className="lg:col-span-5 grid grid-cols-1 gap-6">
-            <div className="bg-[#1A3013] rounded-4xl overflow-hidden  group cursor-pointer h-full min-h-60 relative">
+            <div className="bg-[#1A3013] rounded-4xl overflow-hidden group cursor-pointer h-full min-h-60 relative">
               <img
                 src="/images/ribeye.png"
                 alt="Suya-Spiced Ribeye"
                 className="w-full h-full object-cover opacity-80 transition-transform duration-700 group-hover:scale-105"
               />
-              <div className="absolute inset-0 bg-linear-to-r from-black/60 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent" />
               <div className="absolute bottom-6 left-6 text-white">
                 <h4 className="text-xl font-display font-bold mb-1">
                   Suya-Spiced Ribeye
                 </h4>
                 <span className="text-[10px] font-bold text-white/60">
-                  25 Min • Medium Effort
+                  25 Min &bull; Medium Effort
                 </span>
               </div>
               <div className="absolute bottom-6 right-6 text-white opacity-40">
@@ -310,7 +411,7 @@ const HomePage = () => {
                 />
                 <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors" />
                 <div className="absolute bottom-4 left-4 right-4">
-                  <h4 className="text-sm font-bold text-white drop">
+                  <h4 className="text-sm font-bold text-white">
                     Spiced Puff-Puff
                   </h4>
                 </div>
@@ -323,7 +424,7 @@ const HomePage = () => {
                 />
                 <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors" />
                 <div className="absolute bottom-4 left-4 right-4">
-                  <h4 className="text-sm font-bold text-white drop">
+                  <h4 className="text-sm font-bold text-white">
                     Fonio Superbowl
                   </h4>
                 </div>

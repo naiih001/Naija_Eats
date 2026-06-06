@@ -14,7 +14,7 @@ const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 router.get("/me", authMiddleware, async (req: Request, res: Response) => {
   try {
     const user = await prisma.user.findUnique({
-      where: { id: req.user.id },
+      where: { id: req.user!.id },
       include: { profile: true },
     });
 
@@ -35,7 +35,7 @@ router.put("/profile", authMiddleware, async (req: Request, res: Response) => {
     const { full_name, avatar_url } = req.body;
 
     const profile = await prisma.profile.update({
-      where: { user_id: req.user.id },
+      where: { user_id: req.user!.id },
       data: {
         full_name,
         avatar_url,
@@ -58,7 +58,7 @@ router.post("/change-password", authMiddleware, async (req: Request, res: Respon
     }
 
     const user = await prisma.user.findUnique({
-      where: { id: req.user.id },
+      where: { id: req.user!.id },
     });
 
     if (!user || !(await bcrypt.compare(oldPassword, user.password))) {
@@ -68,7 +68,7 @@ router.post("/change-password", authMiddleware, async (req: Request, res: Respon
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
     await prisma.user.update({
-      where: { id: req.user.id },
+      where: { id: req.user!.id },
       data: { password: hashedPassword },
     });
 

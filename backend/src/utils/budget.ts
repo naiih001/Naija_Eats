@@ -36,7 +36,11 @@ export const getBudgetStatus = async (userId: string) => {
   let currentSpending = 0;
   if (activePlan && activePlan.items) {
     currentSpending = activePlan.items.reduce((sum, item) => {
-      const price = item.meal.price_min ? Number(item.meal.price_min) : 0;
+      const price = item.price_at_time
+        ? Number(item.price_at_time)
+        : item.meal.price_min
+          ? Number(item.meal.price_min)
+          : 0;
       return sum + price;
     }, 0);
   }

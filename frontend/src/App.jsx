@@ -12,14 +12,14 @@ import SignIn from "./pages/auth/SignIn";
 import SignUp from "./pages/auth/SignUp";
 import GeneratingPlan from "./pages/onboarding/GeneratingPlan";
 import MealPlan from "./pages/onboarding/MealPlan";
-import WeeklyPlan from "./pages/onboarding/WeeklyPlan";
+import WeeklyPlan from "./pages/WeeklyPlan";
 import Market from "./pages/Market";
 import MenuPage from "./pages/MenuPage";
 import Profile from "./pages/Profile";
 import EditProfile from "./pages/EditProfile";
 import MealDetail from "./pages/MealDetail";
 import SplashScreen from "./pages/onboarding/SplashScreen";
-import { BudgetAlertProvider } from "./context/BudgetAlertContext";
+import { BudgetAlertProvider } from "./context/BudgetAlertProvider";
 
 import VerifyEmail from "./pages/auth/VerifyEmail";
 import ForgotPassword from "./pages/auth/ForgotPassword";
@@ -27,6 +27,7 @@ import ResetPassword from "./pages/auth/ResetPassword";
 
 import { useState, useEffect } from "react";
 import { Toaster } from "sonner";
+import OnboardingLayout from "./components/layout/OnboardingLayout";
 
 function App() {
   const [showSplash, setShowSplash] = useState(true);
@@ -51,47 +52,14 @@ function App() {
           element={<Navigate to="/onboarding/setbudget" replace />}
         />
         <Route element={<RequireOnboarding />}>
-          <Route
-            path="/"
-            element={
-              <HomePageLayout>
-                <HomePage />
-              </HomePageLayout>
-            }
-          />
-          <Route
-            path="/market"
-            element={
-              <HomePageLayout>
-                <Market />
-              </HomePageLayout>
-            }
-          />
-          <Route
-            path="/menu-page"
-            element={
-              <HomePageLayout>
-                <MenuPage />
-              </HomePageLayout>
-            }
-          />
-          <Route
-            path="/profile"
-            element={
-              <HomePageLayout>
-                <Profile />
-              </HomePageLayout>
-            }
-          />
-          <Route path="/weekly-plan" element={<WeeklyPlan />} />
-          <Route
-            path="/meal/:id"
-            element={
-              <HomePageLayout>
-                <MealDetail />
-              </HomePageLayout>
-            }
-          />
+          <Route element={<HomePageLayout />}>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/market" element={<Market />} />
+            <Route path="/menu-page" element={<MenuPage />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/weekly-plan" element={<WeeklyPlan />} />
+            <Route path="/meal/:id" element={<MealDetail />} />
+          </Route>
         </Route>
         <Route path="/" element={<LandingPage />} />
         <Route path="/onboarding/set-budget" element={<SetBudget />} />
@@ -109,7 +77,14 @@ function App() {
           path="/onboarding/generating-plan"
           element={<GeneratingPlan />}
         />
-        <Route path="/onboarding/meal-plan" element={<MealPlan />} />
+        <Route
+          path="/onboarding/meal-plan"
+          element={
+            <OnboardingLayout>
+              <MealPlan />
+            </OnboardingLayout>
+          }
+        />
         <Route path="*" element={<Navigate to="/" replace />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />

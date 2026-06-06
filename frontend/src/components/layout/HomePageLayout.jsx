@@ -1,9 +1,10 @@
 import { useState } from "react";
+import { Outlet } from "react-router-dom";
 import Header from "../ui/Header";
 import BottomTabBar from "../ui/BottomTabBar";
 import Sidebar from "../ui/Sidebar";
 import BudgetAlertBanner from "../ui/BudgetAlertBanner";
-import { useBudgetAlert } from "../../context/useBudgetAlert";
+import { useBudgetAlert } from "../../context/BudgetAlertContext";
 
 const HomePageLayout = ({ children }) => {
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(true);
@@ -22,7 +23,7 @@ const HomePageLayout = ({ children }) => {
           isExpanded={isSidebarExpanded}
         />
         <main className="flex-1 pb-32 lg:pb-12 overflow-x-hidden">
-          {children}
+          {children || <Outlet />}
         </main>
       </div>
       <BottomTabBar />

@@ -1,76 +1,145 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowRightIcon, SearchIcon } from "../constants/icons";
-
-import { useBudgetAlert } from "../context/useBudgetAlert";
-import { WeekPlan } from "../constants/weekPlan";
-import { getMealMarketData } from "../utils/getMarketData";
-import {
-  GrainIcon,
-  LeafIcon,
-  ProteinIcon,
-  SpiceIcon,
-} from "../constants/icons";
 import { WeeklySummaryCard } from "../components/ui/WeeklySummaryCard";
-import BudgetWarning from "./BudgetWarning";
+import { planService } from "../services/plan.api";
+import transformTimetable from "../constants/weekPlan";
+import EmptyState from "./EmptyState";
+import { MEAL_DETAILS } from "../constants/mealDetails";
+import { IngredientLookup } from "../constants/ingredientLookup";
 
+/* ─── module-level helpers ─────────────────────────────────────────────── */
+const SLOT_ORDER = ["Breakfast", "Lunch", "Dinner"];
+
+const SLOT_EMOJI = {
+  Breakfast: "🌅",
+  Lunch: "☀️",
+  Dinner: "🌙",
+};
+
+function getTodayName() {
+  return new Intl.DateTimeFormat("en-US", { weekday: "long" }).format(
+    new Date(),
+  );
+}
+
+function normaliseSlot(type = "") {
+  return type.charAt(0).toUpperCase() + type.slice(1).toLowerCase();
+}
+
+function getMealIngredients(meal) {
+  if (meal.slug && MEAL_DETAILS[meal.slug]?.ingredients) {
+    return MEAL_DETAILS[meal.slug].ingredients;
+  }
+  const normName = meal.name.toLowerCase().replace(/[^a-z0-9]/g, "");
+  const foundKey = Object.keys(MEAL_DETAILS).find(
+    (k) => k.toLowerCase().replace(/[^a-z0-9]/g, "") === normName
+  );
+  if (foundKey && MEAL_DETAILS[foundKey]?.ingredients) {
+    return MEAL_DETAILS[foundKey].ingredients;
+  }
+  return [
+    "Fresh ingredients for " + meal.name,
+    "Salt and pepper to taste"
+  ];
+}
+
+function findLookupIngredient(ingStr) {
+  const cleanStr = ingStr.toLowerCase();
+  const sortedKeys = Object.keys(IngredientLookup).sort((a, b) => b.length - a.length);
+  
+  for (const key of sortedKeys) {
+    const cleanKey = key.toLowerCase();
+    
+    if (cleanStr.includes(cleanKey)) {
+      return { key, data: IngredientLookup[key] };
+    }
+    
+    let keyToCheck = cleanKey;
+    if (cleanKey.endsWith("s") && cleanKey.length > 3) {
+      keyToCheck = cleanKey.slice(0, -1);
+    }
+    if (cleanStr.includes(keyToCheck)) {
+      return { key, data: IngredientLookup[key] };
+    }
+  }
+  return null;
+}
+
+/* ─── Market ───────────────────────────────────────────────────────────── */
 const Market = () => {
   const navigate = useNavigate();
   const [activeFilter, setActiveFilter] = useState("Today's Meals");
   const [searchTerm, setSearchTerm] = useState("");
-  const { setShoppingListTotal, budgetLimit, showBudgetAlert } =
-    useBudgetAlert();
-  const [randomMeal, setRandomMeal] = useState(WeekPlan[0].meals[0]);
-  const [marketData, setMarketData] = useState(() =>
-    getMealMarketData(WeekPlan[0].meals[0]),
-  );
-  const [showBudgetWarning, setShowBudgetWarning] = useState(false);
   const [customItems, setCustomItems] = useState([]);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newItemName, setNewItemName] = useState("");
   const [newItemPrice, setNewItemPrice] = useState("");
-  const categoryIcons = {
-    Grains: <GrainIcon />,
-    Proteins: <ProteinIcon />,
-    Vegetables: <LeafIcon />,
-    Spices: <SpiceIcon />,
-    Miscellaneous: "🥣",
-  };
 
-  const swapMeals = () => {
-    let meal;
-    do {
-      const randomDay = WeekPlan[Math.floor(Math.random() * WeekPlan.length)];
-      meal =
-        randomDay.meals[Math.floor(Math.random() * randomDay.meals.length)];
-    } while (meal.name === randomMeal.name);
+  const [weekPlan, setWeekPlan] = useState([]);
+  const [todayMeals, setTodayMeals] = useState([]);
+  const [planLoading, setPlanLoading] = useState(true);
+  const [hasPlan, setHasPlan] = useState(true);
 
-    setRandomMeal(meal);
-    setMarketData(getMealMarketData(meal)); // add this
-  };
+  const [checkedIngredients, setCheckedIngredients] = useState(() => {
+    try {
+      const saved = localStorage.getItem("market_checked_ingredients");
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
 
-  // Calculate and update shopping list total (market items + custom items)
   useEffect(() => {
-    const marketTotal = marketData.reduce(
-      (sum, category) =>
-        sum +
-        category.items.reduce(
-          (catSum, item) =>
-            catSum +
-            (item.actualPrice !== undefined
-              ? item.actualPrice
-              : item.minPrice || 0),
-          0,
-        ),
-      0,
-    );
-    const customTotal = customItems.reduce(
-      (sum, item) => sum + (item.price || 0),
-      0,
-    );
-    const total = marketTotal + customTotal;
-    setShoppingListTotal(total);
-  }, [marketData, customItems, setShoppingListTotal, budgetLimit]);
+    localStorage.setItem("market_checked_ingredients", JSON.stringify(checkedIngredients));
+  }, [checkedIngredients]);
+
+  const toggleIngredientChecked = (key) => {
+    setCheckedIngredients((prev) => ({
+      ...prev,
+      [key]: !prev[key],
+    }));
+  };
+
+  const filters = ["Today's Meals", "This Week's Meals", "All"];
+
+  useEffect(() => {
+    const fetchPlan = async () => {
+      try {
+        let data;
+        const cached = localStorage.getItem("weekly_meal_plan");
+        if (cached) {
+          data = JSON.parse(cached);
+          console.log("Loaded timetable from cache in Market:", data);
+        } else {
+          data = await planService.getTimetable();
+          localStorage.setItem("weekly_meal_plan", JSON.stringify(data));
+          console.log("Fetched timetable from backend in Market:", data);
+        }
+        const parsedWeekPlan = transformTimetable(data);
+        setWeekPlan(parsedWeekPlan);
+
+        const todayDay = parsedWeekPlan.find((d) => d.day === getTodayName());
+        if (!todayDay || todayDay.meals.length === 0) {
+          setHasPlan(false);
+        } else {
+          const sorted = [...todayDay.meals].sort(
+            (a, b) =>
+              SLOT_ORDER.indexOf(normaliseSlot(a.type)) -
+              SLOT_ORDER.indexOf(normaliseSlot(b.type)),
+          );
+          setTodayMeals(sorted);
+          setHasPlan(true);
+        }
+      } catch (err) {
+        console.error("Failed to fetch plan in Market:", err);
+        setHasPlan(false);
+      } finally {
+        setPlanLoading(false);
+      }
+    };
+    fetchPlan();
+  }, []);
 
   const addCustomItem = () => {
     const name = newItemName.trim();
@@ -85,77 +154,84 @@ const Market = () => {
     setShowAddForm(false);
   };
 
-  const removeCustomItem = (id) => {
+  const removeCustomItem = (id) =>
     setCustomItems((prev) => prev.filter((item) => item.id !== id));
-  };
 
-  const toggleCustomBought = (id) => {
+  const toggleCustomBought = (id) =>
     setCustomItems((prev) =>
       prev.map((item) =>
         item.id === id ? { ...item, bought: !item.bought } : item,
       ),
     );
-  };
 
-  const handleSearch = (e) => {
-    setSearchTerm(e.target.value);
-  };
+  const handleSearch = (e) => setSearchTerm(e.target.value);
 
-  const toggleBought = (catIdx, itemIdx) => {
-    setMarketData((prevData) =>
-      prevData.map((category, cIdx) => {
-        if (cIdx !== catIdx) return category;
-
-        return {
-          ...category,
-          items: category.items.map((item, iIdx) => {
-            if (iIdx !== itemIdx) return item;
-            return { ...item, bought: !item.bought };
-          }),
-        };
-      }),
+  const filteredTodayMeals = todayMeals.filter((meal) => {
+    if (!searchTerm) return true;
+    const term = searchTerm.toLowerCase();
+    const ingredients = getMealIngredients(meal);
+    return (
+      meal.name.toLowerCase().includes(term) ||
+      ingredients.some((ing) => ing.toLowerCase().includes(term))
     );
-  };
+  });
 
-  const updateItemPrice = (catIdx, itemIdx, value) => {
-    setMarketData((prevData) =>
-      prevData.map((category, cIdx) => {
-        if (cIdx !== catIdx) return category;
+  const filteredWeekPlan = weekPlan.map((dayPlan) => {
+    const meals = dayPlan.meals.filter((meal) => {
+      if (!searchTerm) return true;
+      const term = searchTerm.toLowerCase();
+      const ingredients = getMealIngredients(meal);
+      return (
+        meal.name.toLowerCase().includes(term) ||
+        ingredients.some((ing) => ing.toLowerCase().includes(term))
+      );
+    });
+    return { ...dayPlan, meals };
+  }).filter((dayPlan) => dayPlan.meals.length > 0);
 
-        return {
-          ...category,
-          items: category.items.map((item, iIdx) => {
-            if (iIdx !== itemIdx) return item;
-            return {
-              ...item,
-              actualPrice: value ? parseFloat(value) : undefined,
+  const getConsolidatedIngredients = () => {
+    const allIngredientsMap = {};
+    const term = searchTerm.toLowerCase();
+
+    weekPlan.forEach((dayPlan) => {
+      dayPlan.meals.forEach((meal) => {
+        const ingredients = getMealIngredients(meal);
+        ingredients.forEach((ing) => {
+          const lookup = findLookupIngredient(ing);
+          const cleanName = lookup ? lookup.key : ing;
+          const category = lookup ? lookup.data.category : "Other";
+          const qty = lookup ? lookup.data.qty : null;
+
+          if (searchTerm && !cleanName.toLowerCase().includes(term) && !ing.toLowerCase().includes(term)) {
+            return;
+          }
+
+          if (!allIngredientsMap[cleanName]) {
+            allIngredientsMap[cleanName] = {
+              name: cleanName,
+              category,
+              qty,
+              count: 0,
             };
-          }),
-        };
-      }),
-    );
+          }
+          allIngredientsMap[cleanName].count += 1;
+        });
+      });
+    });
+
+    const categories = {};
+    Object.values(allIngredientsMap).forEach((item) => {
+      if (!categories[item.category]) {
+        categories[item.category] = [];
+      }
+      categories[item.category].push(item);
+    });
+
+    return categories;
   };
-
-  const allBought = marketData.every((category) =>
-    category.items.every((item) => item.bought),
-  );
-
-  const handleMarkAllBought = () => {
-    const allBought = marketData.every((category) =>
-      category.items.every((item) => item.bought),
-    );
-
-    setMarketData((prevData) =>
-      prevData.map((category) => ({
-        ...category,
-        items: category.items.map((item) => ({ ...item, bought: !allBought })),
-      })),
-    );
-  };
-  const filters = ["Today's Meals", "This Week's Meals", "All"];
 
   return (
-    <main className="px-5 pt-6 flex flex-col gap-6 relative">
+    <main className="px-5 pt-6 flex flex-col gap-6 relative pb-10">
       <h1 className="text-[2.5rem] font-display font-extrabold text-text-primary leading-none">
         MARKET
       </h1>
@@ -178,79 +254,380 @@ const Market = () => {
         ))}
       </div>
 
-      {/* Featured Card: Today's Meal */}
-      <section className="flex flex-col gap-4">
-        <div className="flex justify-between items-end">
-          <h2 className="text-2xl font-display font-extrabold text-text-primary">
-            Today's Meal
-          </h2>
-          <button
-            onClick={swapMeals}
-            className="text-accent-orange text-xs font-bold flex items-center gap-1 hover:underline cursor-pointer"
-          >
-            Swap Meal
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
+      {planLoading ? (
+        /* skeleton — inline grid, not a sub-component */
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {[0, 1, 2].map((i) => (
+            <div
+              key={i}
+              className="bg-text-primary/10 rounded-3xl overflow-hidden animate-pulse h-72"
             >
-              <path d="m21 2-5 5m-11 5 5 5m0-10 8 8" />
-            </svg>
-          </button>
-        </div>
-
-        <div className="bg-text-primary rounded-3xl p-5 text-white flex flex-col gap-4 max-w-xs">
-          <div className="flex gap-4 ">
-            <div className="w-32 h-32 shrink-0 rounded-2xl overflow-hidden border-2 border-white/10">
-              <img
-                src={randomMeal.image}
-                alt={randomMeal.name}
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <div className="flex flex-col gap-1">
-              <div className="flex gap-2">
-                <span className="bg-white/20 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest">
-                  Served 1
-                </span>
+              <div className="h-44 bg-text-muted/20" />
+              <div className="p-4 flex flex-col gap-2">
+                <div className="h-4 w-2/3 bg-text-muted/20 rounded-full" />
+                <div className="h-3 w-1/2 bg-text-muted/10 rounded-full" />
               </div>
-              <h3 className="text-xl font-display font-bold leading-tight mt-1">
-                {randomMeal.name}
-              </h3>
-              <p className="text-[10px] text-white/70 leading-relaxed line-clamp-3 font-medium">
-                {randomMeal.description}
-              </p>
             </div>
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <h4 className="text-[11px] font-bold uppercase tracking-widest text-white/50">
-              Ingredients Needed:
-            </h4>
-            <div className="grid grid-cols-2 gap-x-4 gap-y-1">
-              {randomMeal.ingredients.slice(0, 4).map((ing) => (
-                <div key={ing} className="flex items-center gap-2">
-                  <div className="w-1 h-1 rounded-full bg-accent-orange" />
-                  <span className="text-[11px] font-medium text-white/90">
-                    {ing}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <button
-            onClick={() => navigate(`/meal/${randomMeal.slug}`)}
-            className="bg-accent-orange hover:bg-[#e66a13] text-white py-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer"
-          >
-            <ArrowRightIcon />
-            Start Cooking
-          </button>
+          ))}
         </div>
-      </section>
+      ) : !hasPlan ? (
+        <EmptyState />
+      ) : (
+        <>
+          {/* ── Today's Meals ───────────────────────────────────────────────── */}
+          {activeFilter === "Today's Meals" && (
+            <div className="flex flex-col gap-6">
+              <section className="flex flex-col gap-4">
+                <div className="flex justify-between items-end">
+                  <div className="flex flex-col gap-0.5">
+                    <h2 className="text-2xl font-display font-extrabold text-text-primary">
+                      Today&apos;s Meals
+                    </h2>
+                    <p className="text-xs text-text-muted font-medium">
+                      {getTodayName()} &bull;{" "}
+                      {filteredTodayMeals.length > 0
+                        ? `${filteredTodayMeals.length} meals planned`
+                        : "No matching meals"}
+                    </p>
+                  </div>
+                  {filteredTodayMeals.length > 0 && (
+                    <button
+                      onClick={() => navigate("/weekly-plan")}
+                      className="text-accent-orange text-xs font-bold flex items-center gap-1 hover:underline cursor-pointer"
+                    >
+                      Full Week
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                      >
+                        <path d="M5 12h14m-7-7 7 7-7 7" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+
+                {/* meal slot cards */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                  {filteredTodayMeals.map((meal, idx) => {
+                    const slotLabel = normaliseSlot(meal.type);
+                    const emoji = SLOT_EMOJI[slotLabel] ?? "🍽️";
+                    return (
+                      <div
+                        key={meal.slug ?? idx}
+                        className="bg-text-primary rounded-3xl overflow-hidden text-white flex flex-col group transition-transform hover:-translate-y-1 duration-300 shadow-lg"
+                      >
+                        {/* image */}
+                        <div className="relative h-44 shrink-0 overflow-hidden">
+                          <img
+                            src={meal.image || "/images/dish.webp"}
+                            alt={meal.name}
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          />
+                          {/* slot badge */}
+                          <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-black/40 backdrop-blur-sm px-3 py-1 rounded-full border border-white/20">
+                            <span className="text-xs">{emoji}</span>
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-white">
+                              {slotLabel}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* content */}
+                        <div className="p-4 flex flex-col gap-3 flex-1">
+                          <div className="flex justify-between items-start gap-2">
+                            <h3 className="text-base font-display font-bold leading-tight">
+                              {meal.name}
+                            </h3>
+                            <span className="text-[11px] font-bold text-accent-orange whitespace-nowrap shrink-0">
+                              {meal.price}
+                            </span>
+                          </div>
+                          <button
+                            onClick={() => navigate(`/meal/${meal.slug}`)}
+                            className="mt-auto bg-accent-orange hover:bg-[#e66a13] text-white py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer active:scale-95"
+                          >
+                            <ArrowRightIcon />
+                            View Recipe
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+
+              {/* Today's Ingredients Checklist */}
+              {filteredTodayMeals.length > 0 && (
+                <section className="flex flex-col gap-4 mt-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">🛒</span>
+                    <h2 className="text-xl font-display font-extrabold text-text-primary">
+                      Today&apos;s Ingredients Checklist
+                    </h2>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {filteredTodayMeals.map((meal) => {
+                      const ingredients = getMealIngredients(meal);
+                      return (
+                        <div
+                          key={meal.slug}
+                          className="bg-white rounded-3xl p-5 shadow-sm border border-black/5 flex flex-col gap-3"
+                        >
+                          <h3 className="text-sm font-display font-extrabold text-text-primary flex items-center gap-2 border-b border-black/5 pb-2">
+                            <span className="w-1.5 h-3 rounded-full bg-accent-orange"></span>
+                            {meal.name} ({normaliseSlot(meal.type)})
+                          </h3>
+                          <div className="flex flex-col gap-2">
+                            {ingredients.map((ing) => {
+                              const key = `today-${meal.slug}-${ing}`;
+                              const isChecked = !!checkedIngredients[key];
+                              const lookup = findLookupIngredient(ing);
+                              return (
+                                <div
+                                  key={ing}
+                                  className="flex items-center justify-between py-1 border-b border-black/5 last:border-0"
+                                >
+                                  <div
+                                    className="flex items-center gap-3 cursor-pointer flex-1"
+                                    onClick={() => toggleIngredientChecked(key)}
+                                  >
+                                    <div
+                                      className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all ${
+                                        isChecked
+                                          ? "bg-accent-orange border-accent-orange text-white"
+                                          : "border-text-muted"
+                                      }`}
+                                    >
+                                      {isChecked && (
+                                        <svg
+                                          width="10"
+                                          height="8"
+                                          viewBox="0 0 12 9"
+                                          fill="none"
+                                        >
+                                          <path
+                                            d="M1 4L4.5 7.5L11 1"
+                                            stroke="white"
+                                            strokeWidth="3"
+                                            strokeLinecap="round"
+                                          />
+                                        </svg>
+                                      )}
+                                    </div>
+                                    <span
+                                      className={`text-xs ${
+                                        isChecked
+                                          ? "text-text-muted line-through"
+                                          : "text-text-primary font-bold"
+                                      }`}
+                                    >
+                                      {ing}
+                                    </span>
+                                  </div>
+                                  {lookup && lookup.data.qty && (
+                                    <span className="text-[10px] text-text-muted bg-black/5 px-2 py-0.5 rounded-md font-semibold whitespace-nowrap">
+                                      {lookup.data.qty}
+                                    </span>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </section>
+              )}
+            </div>
+          )}
+
+          {/* ── This Week's Meals ───────────────────────────────────────────── */}
+          {activeFilter === "This Week's Meals" && (
+            <div className="flex flex-col gap-8">
+              {filteredWeekPlan.length === 0 ? (
+                <div className="text-center py-12 bg-white rounded-3xl border border-black/5 text-text-muted">
+                  No matching meals found for this week.
+                </div>
+              ) : (
+                filteredWeekPlan.map((dayPlan) => (
+                  <div key={dayPlan.day} className="flex flex-col gap-4">
+                    <div className="flex items-center gap-2">
+                      <div
+                        className={`w-1.5 h-6 rounded-full ${
+                          dayPlan.color || "bg-accent-orange"
+                        }`}
+                      ></div>
+                      <h3 className="text-lg font-display font-extrabold text-text-primary">
+                        {dayPlan.day}
+                      </h3>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {dayPlan.meals.map((meal) => {
+                        const ingredients = getMealIngredients(meal);
+                        return (
+                          <div
+                            key={meal.slug}
+                            className="bg-white rounded-3xl p-5 shadow-sm border border-black/5 flex flex-col gap-3 hover:shadow-md transition-shadow"
+                          >
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <span className="text-[10px] font-bold text-accent-orange uppercase tracking-wider">
+                                  {normaliseSlot(meal.type)}
+                                </span>
+                                <h4 className="text-sm font-display font-extrabold text-text-primary leading-tight mt-0.5">
+                                  {meal.name}
+                                </h4>
+                              </div>
+                            </div>
+                            <div className="h-px bg-black/5 w-full my-1" />
+                            <p className="text-[10px] font-extrabold text-text-muted uppercase tracking-wider">
+                              Ingredients:
+                            </p>
+                            <div className="flex flex-col gap-2">
+                              {ingredients.map((ing) => {
+                                const key = `week-${dayPlan.day}-${meal.slug}-${ing}`;
+                                const isChecked = !!checkedIngredients[key];
+                                return (
+                                  <div
+                                    key={ing}
+                                    className="flex items-center gap-2.5 cursor-pointer"
+                                    onClick={() => toggleIngredientChecked(key)}
+                                  >
+                                    <div
+                                      className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${
+                                        isChecked
+                                          ? "bg-accent-orange border-accent-orange text-white"
+                                          : "border-text-muted"
+                                      }`}
+                                    >
+                                      {isChecked && (
+                                        <svg
+                                          width="8"
+                                          height="6"
+                                          viewBox="0 0 12 9"
+                                          fill="none"
+                                        >
+                                          <path
+                                            d="M1 4L4.5 7.5L11 1"
+                                            stroke="white"
+                                            strokeWidth="3"
+                                            strokeLinecap="round"
+                                          />
+                                        </svg>
+                                      )}
+                                    </div>
+                                    <span
+                                      className={`text-xs ${
+                                        isChecked
+                                          ? "text-text-muted line-through"
+                                          : "text-text-primary font-bold"
+                                      }`}
+                                    >
+                                      {ing}
+                                    </span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+
+          {/* ── All (Consolidated Grocery List) ─────────────────────────────── */}
+          {activeFilter === "All" && (
+            <div className="flex flex-col gap-6">
+              {(() => {
+                const consolidated = getConsolidatedIngredients();
+                if (Object.keys(consolidated).length === 0) {
+                  return (
+                    <div className="text-center py-12 bg-white rounded-3xl border border-black/5 text-text-muted">
+                      No matching ingredients found.
+                    </div>
+                  );
+                }
+                return Object.entries(consolidated).map(([category, items]) => (
+                  <div key={category} className="flex flex-col gap-3">
+                    <h3 className="text-md font-display font-extrabold text-text-primary flex items-center gap-2">
+                      <span className="w-1.5 h-4 rounded-full bg-[#2d4a1e]"></span>
+                      {category}
+                    </h3>
+                    <div className="bg-white rounded-3xl p-5 border border-black/5 shadow-sm flex flex-col gap-3">
+                      {items.map((item) => {
+                        const key = `all-ing-${item.name}`;
+                        const isChecked = !!checkedIngredients[key];
+                        return (
+                          <div
+                            key={item.name}
+                            className="flex items-center justify-between py-1 border-b border-black/5 last:border-0"
+                          >
+                            <div
+                              className="flex items-center gap-3 cursor-pointer flex-1"
+                              onClick={() => toggleIngredientChecked(key)}
+                            >
+                              <div
+                                className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all ${
+                                  isChecked
+                                    ? "bg-[#2d4a1e] border-[#2d4a1e] text-white"
+                                    : "border-text-muted"
+                                }`}
+                              >
+                                {isChecked && (
+                                  <svg
+                                    width="10"
+                                    height="8"
+                                    viewBox="0 0 12 9"
+                                    fill="none"
+                                  >
+                                    <path
+                                      d="M1 4L4.5 7.5L11 1"
+                                      stroke="white"
+                                      strokeWidth="3"
+                                      strokeLinecap="round"
+                                    />
+                                  </svg>
+                                )}
+                              </div>
+                              <span
+                                className={`text-sm ${
+                                  isChecked
+                                    ? "text-text-muted line-through"
+                                    : "text-text-primary font-bold"
+                                }`}
+                              >
+                                {item.name}{" "}
+                                <span className="text-xs text-text-muted/70 font-normal">
+                                  ({item.count} {item.count > 1 ? "meals" : "meal"})
+                                </span>
+                              </span>
+                            </div>
+                            {item.qty && (
+                              <span className="text-xs text-text-muted bg-black/5 px-2 py-0.5 rounded-md font-semibold font-sans">
+                                {item.qty}
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ));
+              })()}
+            </div>
+          )}
+        </>
+      )}
 
       {/* Search Bar */}
       <div className="relative">
@@ -265,110 +642,6 @@ const Market = () => {
         />
       </div>
 
-      {/* Market Categories */}
-      <div className="flex flex-col gap-8">
-        {marketData.map((section, catIdx) => (
-          <div key={catIdx} className="flex flex-col gap-3">
-            <div className="flex items-center gap-2 opacity-80">
-              <span className="text-xl text-text-muted/50">
-                {categoryIcons[section.category] ?? "🛒"}
-              </span>
-              <h2 className="text-lg font-display font-bold text-text-primary">
-                {section.category}
-              </h2>
-            </div>
-
-            <div className="flex flex-col lg:grid lg:grid-cols-2 gap-2">
-              {section.items.map((item, itemIdx) => {
-                if (
-                  searchTerm &&
-                  !item.name.toLowerCase().includes(searchTerm.toLowerCase())
-                )
-                  return null;
-
-                return (
-                  <div
-                    key={itemIdx}
-                    onClick={() => toggleBought(catIdx, itemIdx)}
-                    className="bg-white rounded-2xl p-4 flex items-center gap-4 shadow-sm cursor-pointer active:scale-[0.98] transition-all border border-transparent"
-                  >
-                    <div
-                      className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${
-                        item.bought
-                          ? "bg-accent-orange border-accent-orange"
-                          : "border-text-muted"
-                      }`}
-                    >
-                      {item.bought && (
-                        <svg
-                          width="12"
-                          height="9"
-                          viewBox="0 0 12 9"
-                          fill="none"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            d="M1 4L4.5 7.5L11 1"
-                            stroke="white"
-                            strokeWidth="2.5"
-                            strokeLinecap="round"
-                          />
-                        </svg>
-                      )}
-                    </div>
-                    <div className="flex-1 flex flex-col">
-                      <span
-                        className={`text-sm font-bold ${
-                          item.bought
-                            ? "text-text-muted line-through"
-                            : "text-text-primary"
-                        }`}
-                      >
-                        {item.name}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {item.minPrice !== undefined &&
-                        item.maxPrice !== undefined && (
-                          <div className="flex items-center gap-1">
-                            <span className="text-text-primary text-xs font-bold">
-                              ₦
-                            </span>
-                            <input
-                              type="text"
-                              inputMode="numeric"
-                              placeholder={`${item.minPrice.toLocaleString()} - ${item.maxPrice.toLocaleString()}`}
-                              value={
-                                item.actualPrice !== undefined
-                                  ? item.actualPrice
-                                  : ""
-                              }
-                              onChange={(e) =>
-                                updateItemPrice(catIdx, itemIdx, e.target.value)
-                              }
-                              onClick={(e) => e.stopPropagation()}
-                              className={`w-20 bg-transparent border-b border-text-primary/20 text-xs font-bold focus:outline-none focus:border-accent-orange text-center transition-colors ${
-                                item.bought
-                                  ? "text-text-muted line-through"
-                                  : "text-text-primary"
-                              }`}
-                            />
-                          </div>
-                        )}
-                      {item.qty && (
-                        <span className="bg-[#F8F8DF] text-text-primary text-[10px] font-bold px-3 py-1 rounded-lg border border-text-primary/10">
-                          {item.qty}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        ))}
-      </div>
-
       {/* Custom Items Section */}
       {(customItems.length > 0 || showAddForm) && (
         <div className="flex flex-col gap-3">
@@ -379,81 +652,87 @@ const Market = () => {
             </h2>
           </div>
           <div className="flex flex-col gap-2">
-            {customItems.map((item) => (
-              <div
-                key={item.id}
-                className="bg-white rounded-2xl p-4 flex items-center gap-4 shadow-sm border border-transparent"
-              >
+            {customItems
+              .filter(
+                (item) =>
+                  !searchTerm ||
+                  item.name.toLowerCase().includes(searchTerm.toLowerCase()),
+              )
+              .map((item) => (
                 <div
-                  onClick={() => toggleCustomBought(item.id)}
-                  className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all cursor-pointer shrink-0 ${
-                    item.bought
-                      ? "bg-accent-orange border-accent-orange"
-                      : "border-text-muted"
-                  }`}
+                  key={item.id}
+                  className="bg-white rounded-2xl p-4 flex items-center gap-4 shadow-sm border border-transparent"
                 >
-                  {item.bought && (
-                    <svg width="12" height="9" viewBox="0 0 12 9" fill="none">
-                      <path
-                        d="M1 4L4.5 7.5L11 1"
-                        stroke="white"
-                        strokeWidth="2.5"
-                        strokeLinecap="round"
-                      />
-                    </svg>
-                  )}
-                </div>
-                <div
-                  className="flex-1 flex flex-col cursor-pointer"
-                  onClick={() => toggleCustomBought(item.id)}
-                >
-                  <span
-                    className={`text-sm font-bold ${
+                  <div
+                    onClick={() => toggleCustomBought(item.id)}
+                    className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all cursor-pointer shrink-0 ${
                       item.bought
-                        ? "text-text-muted line-through"
-                        : "text-text-primary"
+                        ? "bg-accent-orange border-accent-orange"
+                        : "border-text-muted"
                     }`}
                   >
-                    {item.name}
-                  </span>
-                </div>
-                <div className="flex items-center gap-3">
-                  {item.price > 0 && (
+                    {item.bought && (
+                      <svg width="12" height="9" viewBox="0 0 12 9" fill="none">
+                        <path
+                          d="M1 4L4.5 7.5L11 1"
+                          stroke="white"
+                          strokeWidth="2.5"
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                    )}
+                  </div>
+                  <div
+                    className="flex-1 flex flex-col cursor-pointer"
+                    onClick={() => toggleCustomBought(item.id)}
+                  >
                     <span
-                      className={`text-xs font-bold ${
+                      className={`text-sm font-bold ${
                         item.bought
                           ? "text-text-muted line-through"
                           : "text-text-primary"
                       }`}
                     >
-                      ₦{item.price.toLocaleString()}
+                      {item.name}
                     </span>
-                  )}
-                  <button
-                    onClick={() => removeCustomItem(item.id)}
-                    className="w-7 h-7 rounded-lg bg-red-50 flex items-center justify-center hover:bg-red-100 transition-colors text-red-500"
-                    aria-label="Remove item"
-                  >
-                    <svg
-                      width="12"
-                      height="12"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                      strokeLinecap="round"
+                  </div>
+                  <div className="flex items-center gap-3">
+                    {item.price > 0 && (
+                      <span
+                        className={`text-xs font-bold ${
+                          item.bought
+                            ? "text-text-muted line-through"
+                            : "text-text-primary"
+                        }`}
+                      >
+                        ₦{item.price.toLocaleString()}
+                      </span>
+                    )}
+                    <button
+                      onClick={() => removeCustomItem(item.id)}
+                      className="w-7 h-7 rounded-lg bg-red-50 flex items-center justify-center hover:bg-red-100 transition-colors text-red-500"
+                      aria-label="Remove item"
                     >
-                      <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
-                    </svg>
-                  </button>
+                      <svg
+                        width="12"
+                        height="12"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                      >
+                        <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
           </div>
         </div>
       )}
 
-      {/* Add Custom Item inline form */}
+      {/* Add Custom Item */}
       {showAddForm ? (
         <div className="bg-white rounded-2xl p-4 flex flex-col gap-3 shadow-sm border-2 border-accent-orange/30">
           <p className="text-xs font-bold uppercase tracking-widest text-text-muted">
@@ -505,149 +784,6 @@ const Market = () => {
           </span>
           Add Custom Item
         </button>
-      )}
-
-      {/* Totals + budget progress */}
-      {(() => {
-        const minTotal =
-          marketData.reduce(
-            (sum, cat) =>
-              sum + cat.items.reduce((s, item) => s + (item.minPrice || 0), 0),
-            0,
-          ) + customItems.reduce((sum, item) => sum + (item.price || 0), 0);
-        const maxTotal =
-          marketData.reduce(
-            (sum, cat) =>
-              sum + cat.items.reduce((s, item) => s + (item.maxPrice || 0), 0),
-            0,
-          ) + customItems.reduce((sum, item) => sum + (item.price || 0), 0);
-        const totalItems =
-          marketData.reduce((sum, cat) => sum + cat.items.length, 0) +
-          customItems.length;
-        const boughtItems =
-          marketData.reduce(
-            (sum, cat) => sum + cat.items.filter((i) => i.bought).length,
-            0,
-          ) + customItems.filter((i) => i.bought).length;
-        const budgetUsedPct =
-          budgetLimit > 0
-            ? Math.min(Math.round((minTotal / budgetLimit) * 100), 100)
-            : 0;
-        const isOverBudget = budgetLimit > 0 && minTotal > budgetLimit;
-
-        return (
-          <div className="bg-white rounded-2xl p-4 flex flex-col gap-3 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div className="flex flex-col gap-0.5">
-                <span className="text-[11px] font-bold uppercase tracking-widest text-text-muted">
-                  Estimated Total
-                </span>
-                <span
-                  className={`text-2xl font-display font-extrabold ${
-                    isOverBudget ? "text-red-600" : "text-text-primary"
-                  }`}
-                >
-                  ₦{minTotal.toLocaleString()}
-                  {" – "}₦{maxTotal.toLocaleString()}
-                </span>
-              </div>
-              <div className="flex flex-col items-end gap-0.5">
-                <span className="text-[10px] text-text-muted font-medium">
-                  {totalItems} items
-                </span>
-                <span className="text-[10px] text-text-muted font-medium">
-                  {boughtItems} bought
-                </span>
-              </div>
-            </div>
-
-            {/* Budget progress bar — only shown when a budget limit is set */}
-            {budgetLimit > 0 && (
-              <div className="flex flex-col gap-1.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] text-text-muted font-medium">
-                    Budget: ₦{budgetLimit.toLocaleString()}
-                  </span>
-                  <span
-                    className={`text-[11px] font-bold ${
-                      isOverBudget ? "text-red-600" : "text-green-700"
-                    }`}
-                  >
-                    {isOverBudget
-                      ? `₦${(minTotal - budgetLimit).toLocaleString()} over`
-                      : `${budgetUsedPct}% used`}
-                  </span>
-                </div>
-                <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full rounded-full transition-all duration-500 ${
-                      isOverBudget
-                        ? "bg-red-500"
-                        : budgetUsedPct > 80
-                          ? "bg-amber-400"
-                          : "bg-green-500"
-                    }`}
-                    style={{ width: `${Math.min(budgetUsedPct, 100)}%` }}
-                  />
-                </div>
-                {isOverBudget && (
-                  <button
-                    onClick={() => setShowBudgetWarning(true)}
-                    className="mt-1 text-xs text-red-600 font-bold underline underline-offset-2 text-left"
-                  >
-                    View budget warning →
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-        );
-      })()}
-
-      <div className="">
-        <button
-          onClick={handleMarkAllBought}
-          className="bg-accent-orange text-white w-full max-w-xs rounded-2xl h-14 text-sm font-bold shadow-orange-200 hover:bg-[#e66a13] transition-colors cursor-pointer"
-        >
-          {allBought ? "Unmark all" : "Mark all as bought"}
-        </button>
-      </div>
-
-      {/* Budget Warning modal — only appears when total exceeds budget */}
-      {showBudgetAlert && showBudgetWarning && (
-        <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm"
-          onClick={() => setShowBudgetWarning(false)}
-        >
-          <div
-            className="bg-[#F8F8DF] w-full max-w-sm rounded-t-3xl shadow-2xl animate-in slide-in-from-bottom duration-300"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="w-10 h-1 bg-gray-300 rounded-full mx-auto mt-3 mb-1" />
-            <BudgetWarning
-              plan={{
-                name: randomMeal.name,
-                cost:
-                  marketData.reduce(
-                    (sum, cat) =>
-                      sum +
-                      cat.items.reduce(
-                        (s, item) => s + (item.minPrice || 0),
-                        0,
-                      ),
-                    0,
-                  ) +
-                  customItems.reduce((sum, item) => sum + (item.price || 0), 0),
-                meals:
-                  marketData.reduce((sum, cat) => sum + cat.items.length, 0) +
-                  customItems.length,
-                days: 1,
-              }}
-              budget={{ limit: budgetLimit }}
-              onContinue={() => setShowBudgetWarning(false)}
-            />
-          </div>
-        </div>
       )}
     </main>
   );

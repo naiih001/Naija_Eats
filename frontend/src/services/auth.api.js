@@ -171,7 +171,6 @@ export const authService = {
   logout() {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-    localStorage.removeItem("onboarded");
-    localStorage.removeItem("plan_id");
+
   },
 };

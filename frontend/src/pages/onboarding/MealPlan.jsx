@@ -3,18 +3,12 @@ import { useNavigate } from "react-router-dom";
 import Button from "../../components/ui/Button";
 import {
   HeartIcon,
-  ChevronRightIcon,
   ShoppingCartIcon,
   StopWatch,
   BoltIcon,
 } from "../../constants/icons";
 
-import {
-  budgetStats,
-  featuredMeal,
-  subMeals,
-  weeklyMeals,
-} from "../../constants/mealPlan";
+import { budgetStats, featuredMeal, subMeals } from "../../constants/mealPlan";
 import { planService } from "../../services/plan.api";
 
 const MealPlan = () => {
@@ -243,7 +237,7 @@ const MealPlan = () => {
         </div>
 
         {/* Weekly Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-16">
+        {/* <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-16">
           {weeklyMeals.map((meal, i) => (
             <div
               key={i}
@@ -282,7 +276,7 @@ const MealPlan = () => {
               </div>
             </div>
           ))}
-        </div>
+        </div> */}
       </div>
     </>
   );

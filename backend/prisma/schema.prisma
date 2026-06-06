@@ -74,6 +74,7 @@ model meals {
   dietary_tags   String?
   cuisine        String?
   instructions   String?
+  ingredients    Json?
   plan_items     meal_plan_items[]
 }
 
@@ -86,13 +87,14 @@ model meal_plans {
 }
 
 model meal_plan_items {
-  id          String     @id @default(uuid())
-  plan_id     String
-  plan        meal_plans @relation(fields: [plan_id], references: [id], onDelete: Cascade)
-  meal_id     String
-  meal        meals      @relation(fields: [meal_id], references: [id])
-  day_of_week String
-  meal_slot   String
+  id            String     @id @default(uuid())
+  plan_id       String
+  plan          meal_plans @relation(fields: [plan_id], references: [id], onDelete: Cascade)
+  meal_id       String
+  meal          meals      @relation(fields: [meal_id], references: [id])
+  day_of_week   String
+  meal_slot     String
+  price_at_time Decimal?
 }
 
 model shopping_list_items {

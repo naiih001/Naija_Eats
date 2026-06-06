@@ -30,6 +30,9 @@ export const preferencesService = {
   saveBudgetPreferences: (data) => postWithAuth("/api/users/preferences/budget", data),
   saveCookingFrequency: (data) => postWithAuth("/api/users/preferences/frequency", data),
   saveFoodPreferences: (data) => postWithAuth("/api/users/preferences/food", data),
-  generateMealPlans: () => postWithAuth("/api/meal-plans/generate"),
 
+
+  /** generate a timetable from the saved preferences */
+  generateTimetable: () => postWithAuth("/timetable/generate"),
 };
+

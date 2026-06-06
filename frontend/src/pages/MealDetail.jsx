@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   HeartIcon,
@@ -6,28 +7,41 @@ import {
   ChevronRightIcon,
   SpiceIcon,
 } from "../constants/icons";
-// import Button from "../components/ui/Button";
-import { WeekPlan } from "../constants/weekPlan";
 import { MEAL_DETAILS } from "../constants/mealDetails";
 import MealDetailsTabs from "../components/ui/mealDetailsTabs";
+import { planService } from "../services/plan.api";
+import transformTimetable from "../constants/weekPlan";
+import { getMealImage } from "../constants/weekPlan";
 
 const MealDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [mealData, setMealData] = useState(null);
 
-  // Find the meal in WeekPlan by its slug (which matches the URL param)
-  const allMeals = WeekPlan.flatMap((day) => day.meals);
-  const mealData = allMeals.find((m) => m.slug === id);
+  useEffect(() => {
+    const fetchMeal = async () => {
+      try {
+        const data = await planService.getTimetable();
+        const weekPlan = transformTimetable(data);
+        const allMeals = weekPlan.flatMap((day) => day.meals);
+        const found = allMeals.find((m) => m.slug === id);
+        setMealData(found || null);
+      } catch {
+        setMealData(null);
+      }
+    };
+    fetchMeal();
+  }, [id]);
 
-  // Get specific details for a meal using slug (matches MEAL_DETAILS keys)
-  const detailKey = mealData?.slug || id;
+  // Static detail overrides keyed by slug
+  const detailKey = id;
   const details = MEAL_DETAILS[detailKey] || {};
 
-  // Default demo data for the meal
+  // Build the composite meal object used by the UI
   const meal = {
-    id: id,
+    id,
     name: mealData?.name || details.name || "Recipe Not Found",
-    image: mealData?.image || details.image || "/images/dish.webp",
+    image: mealData?.image || getMealImage(details.name || id) || "/images/dish.webp",
     isPremium: true,
     time: details.time || "45 MINS",
     cost: mealData?.price || "VARIABLE COST",
@@ -134,17 +148,6 @@ const MealDetail = () => {
       </div>
 
       <MealDetailsTabs meal={meal} />
-
-      {/* Sticky Bottom Button */}
-      {/* <div className="fixed bottom-15 right-0 w-full max-w-sm px-5 pb-6 bg-linear-to-t from-bg-background via-bg-background/40 to-transparent pt-10 pointer-events-none z-100">
-        <Button
-          variant="primary"
-          className="w-full shadow-2xl shadow-accent-orange/30 flex items-center justify-center gap-2 py-4 text-lg pointer-events-auto "
-        >
-          Start Cooking
-          <ChevronRightIcon className="w-5 h-5" />
-        </Button>
-      </div> */}
     </div>
   );
 };

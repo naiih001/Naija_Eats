@@ -25,7 +25,7 @@ const EmptyState = () => {
 
         {/* CTA */}
         <Button
-          onClick={() => navigate("/onboarding/set-budget")}
+          onClick={() => navigate("/weekly-plan")}
           className="w-full uppercase tracking-widest text-sm font-bold"
         >
           Create Plan

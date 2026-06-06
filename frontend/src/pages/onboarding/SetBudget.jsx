@@ -121,6 +121,7 @@ const SetBudget = () => {
     } catch (err) {
       console.log(err?.message || err);
       toast.error("We couldn't save your budget. Please try again.");
+      navigate("/sign-in");
     } finally {
       setIsSubmitting(false);
     }

@@ -11,86 +11,49 @@ const GeneratingPlan = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const handleSavePreferences = async () => {
+    let active = true;
+    let timer1, timer2, timer3, timer4;
+
+    const generateMealPlan = async () => {
       try {
-        const budgetData = JSON.parse(
-          localStorage.getItem("onboarding_budget") || "{}",
-        );
-        const frequencyData = JSON.parse(
-          localStorage.getItem("onboarding_frequency") || "{}",
-        );
-        const preferencesData = JSON.parse(
-          localStorage.getItem("onboarding_preferences") || "{}",
-        );
+        // Generate the timetable (preferences have already been saved in previous steps)
+        await preferencesService.generateTimetable();
+        localStorage.removeItem("weekly_meal_plan");
 
-        let bufferAmount = 0;
-
-        if (budgetData.selectedBuffer) {
-          if (budgetData.selectedBuffer === "Custom") {
-            const customPercent = parseInt(budgetData.customBuffer);
-            if (!isNaN(customPercent)) {
-              bufferAmount = Math.round(
-                (budgetData.amount * customPercent) / 100,
-              );
-            }
-          } else {
-            const percent = parseInt(
-              budgetData.selectedBuffer.replace("%", ""),
-            );
-            if (!isNaN(percent)) {
-              bufferAmount = Math.round((budgetData.amount * percent) / 100);
-            }
-          }
-        }
-
-        const payload = {
-          amount: budgetData.amount || 0,
-          frequency: budgetData.frequency || "weekly",
-          fluctuation_buffer: bufferAmount,
-          household_size: frequencyData.household_size || 1,
-          daily_meals: frequencyData.daily_meals || 1,
-          is_dessert: frequencyData.is_dessert || false,
-          cooking_frequency: frequencyData.cooking_frequency || "daily",
-          preferences: preferencesData.preferences || [],
-          allergies: preferencesData.allergies || [],
-        };
-
-        await preferencesService.generateMealPlans(payload);
+        if (!active) return;
         toast.success("Meal plan generated successfully!");
-        // to clean up all the stored items in user's localStorage
-        localStorage.removeItem("onboarding_budget");
-        localStorage.removeItem("onboarding_frequency");
-        localStorage.removeItem("onboarding_preferences");
 
-        // progress timers starts only after successful API call
-        const timer1 = setTimeout(() => setCurrentStep(2), 2500);
-        const timer2 = setTimeout(() => setCurrentStep(3), 5000);
-        const timer3 = setTimeout(() => setCurrentStep(4), 7500);
-        const timer4 = setTimeout(
-          () => navigate("/onboarding/meal-plan"),
-          9000,
-        );
-
-        return () => {
-          clearTimeout(timer1);
-          clearTimeout(timer2);
-          clearTimeout(timer3);
-          clearTimeout(timer4);
-        };
+        // progress timers start only after successful API call
+        timer1 = setTimeout(() => {
+          if (active) setCurrentStep(2);
+        }, 2500);
+        timer2 = setTimeout(() => {
+          if (active) setCurrentStep(3);
+        }, 5000);
+        timer3 = setTimeout(() => {
+          if (active) setCurrentStep(4);
+        }, 7500);
+        timer4 = setTimeout(() => {
+          if (active) navigate("/onboarding/meal-plan");
+        }, 9000);
       } catch (err) {
-        console.error("Failed to save preferences during onboarding:", err);
+        if (!active) return;
+        console.error("Failed to generate meal plan during onboarding:", err);
         toast.error(
           "We couldn't generate your meal plan. Please sign in or try again.",
         );
-
         setHasError(true);
       }
     };
 
-    const cleanup = handleSavePreferences();
+    generateMealPlan();
 
     return () => {
-      if (typeof cleanup === "function") cleanup();
+      active = false;
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+      clearTimeout(timer3);
+      clearTimeout(timer4);
     };
   }, [navigate]);
 
