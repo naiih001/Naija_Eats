@@ -2,6 +2,7 @@ import { Router, Request, Response } from "express";
 import { prisma } from "../config/prisma";
 import { _res } from "../utils/helper";
 import { calculateBudgetTier, getBudgetStatus } from "../utils/budget";
+import { generateTimetable } from "../services/timetable.service";
 
 const router = Router();
 
@@ -180,10 +181,7 @@ router.post("/users/preferences/food", async (req: Request, res: Response) => {
 router.post("/meal-plans/generate", async (req: Request, res: Response) => {
   const user = req.user!;
   try {
-    const plan = await prisma.meal_plans.create({
-      data: { user_id: user.id, status: "active" },
-    });
-
+    const plan = await generateTimetable(user.id);
     return _res.success(201, res, "Meal plan generated successfully", {
       planId: plan.id,
     });
