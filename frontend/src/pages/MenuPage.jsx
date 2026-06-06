@@ -141,19 +141,21 @@ const MenuPage = () => {
           <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mx-auto text-3xl">
             🍽️
           </div>
-          <h3 className="text-lg font-bold text-text-primary">No meals found</h3>
+          <h3 className="text-lg font-bold text-text-primary">
+            No meals found
+          </h3>
           <p className="text-sm text-text-muted max-w-xs">
             Try a different search term or category filter.
           </p>
         </div>
       ) : (
-        <div className="flex flex-col lg:grid lg:grid-cols-4 gap-6 pb-12">
+        <div className="flex flex-col lg:grid lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-12">
           {filteredMeals.map((meal) => (
             <div
               key={meal.id}
               className="bg-text-primary rounded-md overflow-hidden shadow-xl flex flex-col h-full max-h-[420px]"
             >
-              <div className="relative h-[50%]">
+              <div className="relative h-[50%] overflow-hidden">
                 <img
                   src={meal.img}
                   alt={meal.name}

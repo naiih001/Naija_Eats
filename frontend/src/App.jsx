@@ -19,7 +19,7 @@ import Profile from "./pages/Profile";
 import EditProfile from "./pages/EditProfile";
 import MealDetail from "./pages/MealDetail";
 import SplashScreen from "./pages/onboarding/SplashScreen";
-import { BudgetAlertProvider } from "./context/BudgetAlertContext";
+import { BudgetAlertProvider } from "./context/BudgetAlertProvider";
 
 import VerifyEmail from "./pages/auth/VerifyEmail";
 import ForgotPassword from "./pages/auth/ForgotPassword";
@@ -52,54 +52,14 @@ function App() {
           element={<Navigate to="/onboarding/setbudget" replace />}
         />
         <Route element={<RequireOnboarding />}>
-          <Route
-            path="/"
-            element={
-              <HomePageLayout>
-                <HomePage />
-              </HomePageLayout>
-            }
-          />
-          <Route
-            path="/market"
-            element={
-              <HomePageLayout>
-                <Market />
-              </HomePageLayout>
-            }
-          />
-          <Route
-            path="/menu-page"
-            element={
-              <HomePageLayout>
-                <MenuPage />
-              </HomePageLayout>
-            }
-          />
-          <Route
-            path="/profile"
-            element={
-              <HomePageLayout>
-                <Profile />
-              </HomePageLayout>
-            }
-          />
-          <Route
-            path="/weekly-plan"
-            element={
-              <HomePageLayout>
-                <WeeklyPlan />
-              </HomePageLayout>
-            }
-          />
-          <Route
-            path="/meal/:id"
-            element={
-              <HomePageLayout>
-                <MealDetail />
-              </HomePageLayout>
-            }
-          />
+          <Route element={<HomePageLayout />}>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/market" element={<Market />} />
+            <Route path="/menu-page" element={<MenuPage />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/weekly-plan" element={<WeeklyPlan />} />
+            <Route path="/meal/:id" element={<MealDetail />} />
+          </Route>
         </Route>
         <Route path="/" element={<LandingPage />} />
         <Route path="/onboarding/set-budget" element={<SetBudget />} />
