@@ -65,7 +65,7 @@ router.post("/preference", async (req: Request, res: Response) => {
 // GET /meals
 // Returns all meals from the catalogue, with optional filtering by category
 // Query params: ?category=breakfast|lunch|dinner&page=1&limit=20
-router.get("/meals", async (req: Request, res: Response) => {
+router.get("/", async (req: Request, res: Response) => {
   const { category } = req.query;
   const page = Math.max(1, parseInt(req.query.page as string) || 1);
   const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
