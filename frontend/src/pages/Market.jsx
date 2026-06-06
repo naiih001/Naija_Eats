@@ -5,6 +5,8 @@ import { WeeklySummaryCard } from "../components/ui/WeeklySummaryCard";
 import { planService } from "../services/plan.api";
 import transformTimetable from "../constants/weekPlan";
 import EmptyState from "./EmptyState";
+import { MEAL_DETAILS } from "../constants/mealDetails";
+import { IngredientLookup } from "../constants/ingredientLookup";
 
 /* ─── module-level helpers ─────────────────────────────────────────────── */
 const SLOT_ORDER = ["Breakfast", "Lunch", "Dinner"];
@@ -25,6 +27,45 @@ function normaliseSlot(type = "") {
   return type.charAt(0).toUpperCase() + type.slice(1).toLowerCase();
 }
 
+function getMealIngredients(meal) {
+  if (meal.slug && MEAL_DETAILS[meal.slug]?.ingredients) {
+    return MEAL_DETAILS[meal.slug].ingredients;
+  }
+  const normName = meal.name.toLowerCase().replace(/[^a-z0-9]/g, "");
+  const foundKey = Object.keys(MEAL_DETAILS).find(
+    (k) => k.toLowerCase().replace(/[^a-z0-9]/g, "") === normName
+  );
+  if (foundKey && MEAL_DETAILS[foundKey]?.ingredients) {
+    return MEAL_DETAILS[foundKey].ingredients;
+  }
+  return [
+    "Fresh ingredients for " + meal.name,
+    "Salt and pepper to taste"
+  ];
+}
+
+function findLookupIngredient(ingStr) {
+  const cleanStr = ingStr.toLowerCase();
+  const sortedKeys = Object.keys(IngredientLookup).sort((a, b) => b.length - a.length);
+  
+  for (const key of sortedKeys) {
+    const cleanKey = key.toLowerCase();
+    
+    if (cleanStr.includes(cleanKey)) {
+      return { key, data: IngredientLookup[key] };
+    }
+    
+    let keyToCheck = cleanKey;
+    if (cleanKey.endsWith("s") && cleanKey.length > 3) {
+      keyToCheck = cleanKey.slice(0, -1);
+    }
+    if (cleanStr.includes(keyToCheck)) {
+      return { key, data: IngredientLookup[key] };
+    }
+  }
+  return null;
+}
+
 /* ─── Market ───────────────────────────────────────────────────────────── */
 const Market = () => {
   const navigate = useNavigate();
@@ -35,19 +76,50 @@ const Market = () => {
   const [newItemName, setNewItemName] = useState("");
   const [newItemPrice, setNewItemPrice] = useState("");
 
+  const [weekPlan, setWeekPlan] = useState([]);
   const [todayMeals, setTodayMeals] = useState([]);
   const [planLoading, setPlanLoading] = useState(true);
   const [hasPlan, setHasPlan] = useState(true);
+
+  const [checkedIngredients, setCheckedIngredients] = useState(() => {
+    try {
+      const saved = localStorage.getItem("market_checked_ingredients");
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem("market_checked_ingredients", JSON.stringify(checkedIngredients));
+  }, [checkedIngredients]);
+
+  const toggleIngredientChecked = (key) => {
+    setCheckedIngredients((prev) => ({
+      ...prev,
+      [key]: !prev[key],
+    }));
+  };
 
   const filters = ["Today's Meals", "This Week's Meals", "All"];
 
   useEffect(() => {
     const fetchPlan = async () => {
       try {
-        const data = await planService.getTimetable();
-        const weekPlan = transformTimetable(data);
-        const todayDay = weekPlan.find((d) => d.day === getTodayName());
+        let data;
+        const cached = localStorage.getItem("weekly_meal_plan");
+        if (cached) {
+          data = JSON.parse(cached);
+          console.log("Loaded timetable from cache in Market:", data);
+        } else {
+          data = await planService.getTimetable();
+          localStorage.setItem("weekly_meal_plan", JSON.stringify(data));
+          console.log("Fetched timetable from backend in Market:", data);
+        }
+        const parsedWeekPlan = transformTimetable(data);
+        setWeekPlan(parsedWeekPlan);
 
+        const todayDay = parsedWeekPlan.find((d) => d.day === getTodayName());
         if (!todayDay || todayDay.meals.length === 0) {
           setHasPlan(false);
         } else {
@@ -59,7 +131,8 @@ const Market = () => {
           setTodayMeals(sorted);
           setHasPlan(true);
         }
-      } catch {
+      } catch (err) {
+        console.error("Failed to fetch plan in Market:", err);
         setHasPlan(false);
       } finally {
         setPlanLoading(false);
@@ -93,6 +166,70 @@ const Market = () => {
 
   const handleSearch = (e) => setSearchTerm(e.target.value);
 
+  const filteredTodayMeals = todayMeals.filter((meal) => {
+    if (!searchTerm) return true;
+    const term = searchTerm.toLowerCase();
+    const ingredients = getMealIngredients(meal);
+    return (
+      meal.name.toLowerCase().includes(term) ||
+      ingredients.some((ing) => ing.toLowerCase().includes(term))
+    );
+  });
+
+  const filteredWeekPlan = weekPlan.map((dayPlan) => {
+    const meals = dayPlan.meals.filter((meal) => {
+      if (!searchTerm) return true;
+      const term = searchTerm.toLowerCase();
+      const ingredients = getMealIngredients(meal);
+      return (
+        meal.name.toLowerCase().includes(term) ||
+        ingredients.some((ing) => ing.toLowerCase().includes(term))
+      );
+    });
+    return { ...dayPlan, meals };
+  }).filter((dayPlan) => dayPlan.meals.length > 0);
+
+  const getConsolidatedIngredients = () => {
+    const allIngredientsMap = {};
+    const term = searchTerm.toLowerCase();
+
+    weekPlan.forEach((dayPlan) => {
+      dayPlan.meals.forEach((meal) => {
+        const ingredients = getMealIngredients(meal);
+        ingredients.forEach((ing) => {
+          const lookup = findLookupIngredient(ing);
+          const cleanName = lookup ? lookup.key : ing;
+          const category = lookup ? lookup.data.category : "Other";
+          const qty = lookup ? lookup.data.qty : null;
+
+          if (searchTerm && !cleanName.toLowerCase().includes(term) && !ing.toLowerCase().includes(term)) {
+            return;
+          }
+
+          if (!allIngredientsMap[cleanName]) {
+            allIngredientsMap[cleanName] = {
+              name: cleanName,
+              category,
+              qty,
+              count: 0,
+            };
+          }
+          allIngredientsMap[cleanName].count += 1;
+        });
+      });
+    });
+
+    const categories = {};
+    Object.values(allIngredientsMap).forEach((item) => {
+      if (!categories[item.category]) {
+        categories[item.category] = [];
+      }
+      categories[item.category].push(item);
+    });
+
+    return categories;
+  };
+
   return (
     <main className="px-5 pt-6 flex flex-col gap-6 relative pb-10">
       <h1 className="text-[2.5rem] font-display font-extrabold text-text-primary leading-none">
@@ -117,110 +254,380 @@ const Market = () => {
         ))}
       </div>
 
-      {/* ── Today's Meals ───────────────────────────────────────────────── */}
-      <section className="flex flex-col gap-4">
-        <div className="flex justify-between items-end">
-          <div className="flex flex-col gap-0.5">
-            <h2 className="text-2xl font-display font-extrabold text-text-primary">
-              Today&apos;s Meals
-            </h2>
-            <p className="text-xs text-text-muted font-medium">
-              {getTodayName()} &bull;{" "}
-              {hasPlan && todayMeals.length > 0
-                ? `${todayMeals.length} meals planned`
-                : "No active plan"}
-            </p>
-          </div>
-          {hasPlan && todayMeals.length > 0 && (
-            <button
-              onClick={() => navigate("/weekly-plan")}
-              className="text-accent-orange text-xs font-bold flex items-center gap-1 hover:underline cursor-pointer"
+      {planLoading ? (
+        /* skeleton — inline grid, not a sub-component */
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {[0, 1, 2].map((i) => (
+            <div
+              key={i}
+              className="bg-text-primary/10 rounded-3xl overflow-hidden animate-pulse h-72"
             >
-              Full Week
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-              >
-                <path d="M5 12h14m-7-7 7 7-7 7" />
-              </svg>
-            </button>
-          )}
-        </div>
-
-        {/* meal cards — inline JSX, no sub-components */}
-        {planLoading ? (
-          /* skeleton — inline grid, not a sub-component */
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            {[0, 1, 2].map((i) => (
-              <div
-                key={i}
-                className="bg-text-primary/10 rounded-3xl overflow-hidden animate-pulse h-72"
-              >
-                <div className="h-44 bg-text-muted/20" />
-                <div className="p-4 flex flex-col gap-2">
-                  <div className="h-4 w-2/3 bg-text-muted/20 rounded-full" />
-                  <div className="h-3 w-1/2 bg-text-muted/10 rounded-full" />
-                </div>
+              <div className="h-44 bg-text-muted/20" />
+              <div className="p-4 flex flex-col gap-2">
+                <div className="h-4 w-2/3 bg-text-muted/20 rounded-full" />
+                <div className="h-3 w-1/2 bg-text-muted/10 rounded-full" />
               </div>
-            ))}
-          </div>
-        ) : !hasPlan ? (
-          <EmptyState />
-        ) : (
-          /* meal slot cards — inline map, not a sub-component */
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            {todayMeals.map((meal, idx) => {
-              const slotLabel = normaliseSlot(meal.type);
-              const emoji = SLOT_EMOJI[slotLabel] ?? "🍽️";
-              return (
-                <div
-                  key={meal.slug ?? idx}
-                  className="bg-text-primary rounded-3xl overflow-hidden text-white flex flex-col group transition-transform hover:-translate-y-1 duration-300 shadow-lg"
-                >
-                  {/* image */}
-                  <div className="relative h-44 shrink-0 overflow-hidden">
-                    <img
-                      src={meal.image || "/images/dish.webp"}
-                      alt={meal.name}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
-                    {/* slot badge */}
-                    <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-black/40 backdrop-blur-sm px-3 py-1 rounded-full border border-white/20">
-                      <span className="text-xs">{emoji}</span>
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-white">
-                        {slotLabel}
-                      </span>
-                    </div>
+            </div>
+          ))}
+        </div>
+      ) : !hasPlan ? (
+        <EmptyState />
+      ) : (
+        <>
+          {/* ── Today's Meals ───────────────────────────────────────────────── */}
+          {activeFilter === "Today's Meals" && (
+            <div className="flex flex-col gap-6">
+              <section className="flex flex-col gap-4">
+                <div className="flex justify-between items-end">
+                  <div className="flex flex-col gap-0.5">
+                    <h2 className="text-2xl font-display font-extrabold text-text-primary">
+                      Today&apos;s Meals
+                    </h2>
+                    <p className="text-xs text-text-muted font-medium">
+                      {getTodayName()} &bull;{" "}
+                      {filteredTodayMeals.length > 0
+                        ? `${filteredTodayMeals.length} meals planned`
+                        : "No matching meals"}
+                    </p>
                   </div>
-
-                  {/* content */}
-                  <div className="p-4 flex flex-col gap-3 flex-1">
-                    <div className="flex justify-between items-start gap-2">
-                      <h3 className="text-base font-display font-bold leading-tight">
-                        {meal.name}
-                      </h3>
-                      <span className="text-[11px] font-bold text-accent-orange whitespace-nowrap shrink-0">
-                        {meal.price}
-                      </span>
-                    </div>
+                  {filteredTodayMeals.length > 0 && (
                     <button
-                      onClick={() => navigate(`/meal/${meal.slug}`)}
-                      className="mt-auto bg-accent-orange hover:bg-[#e66a13] text-white py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer active:scale-95"
+                      onClick={() => navigate("/weekly-plan")}
+                      className="text-accent-orange text-xs font-bold flex items-center gap-1 hover:underline cursor-pointer"
                     >
-                      <ArrowRightIcon />
-                      View Recipe
+                      Full Week
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                      >
+                        <path d="M5 12h14m-7-7 7 7-7 7" />
+                      </svg>
                     </button>
-                  </div>
+                  )}
                 </div>
-              );
-            })}
-          </div>
-        )}
-      </section>
+
+                {/* meal slot cards */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                  {filteredTodayMeals.map((meal, idx) => {
+                    const slotLabel = normaliseSlot(meal.type);
+                    const emoji = SLOT_EMOJI[slotLabel] ?? "🍽️";
+                    return (
+                      <div
+                        key={meal.slug ?? idx}
+                        className="bg-text-primary rounded-3xl overflow-hidden text-white flex flex-col group transition-transform hover:-translate-y-1 duration-300 shadow-lg"
+                      >
+                        {/* image */}
+                        <div className="relative h-44 shrink-0 overflow-hidden">
+                          <img
+                            src={meal.image || "/images/dish.webp"}
+                            alt={meal.name}
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          />
+                          {/* slot badge */}
+                          <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-black/40 backdrop-blur-sm px-3 py-1 rounded-full border border-white/20">
+                            <span className="text-xs">{emoji}</span>
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-white">
+                              {slotLabel}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* content */}
+                        <div className="p-4 flex flex-col gap-3 flex-1">
+                          <div className="flex justify-between items-start gap-2">
+                            <h3 className="text-base font-display font-bold leading-tight">
+                              {meal.name}
+                            </h3>
+                            <span className="text-[11px] font-bold text-accent-orange whitespace-nowrap shrink-0">
+                              {meal.price}
+                            </span>
+                          </div>
+                          <button
+                            onClick={() => navigate(`/meal/${meal.slug}`)}
+                            className="mt-auto bg-accent-orange hover:bg-[#e66a13] text-white py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer active:scale-95"
+                          >
+                            <ArrowRightIcon />
+                            View Recipe
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+
+              {/* Today's Ingredients Checklist */}
+              {filteredTodayMeals.length > 0 && (
+                <section className="flex flex-col gap-4 mt-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">🛒</span>
+                    <h2 className="text-xl font-display font-extrabold text-text-primary">
+                      Today&apos;s Ingredients Checklist
+                    </h2>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {filteredTodayMeals.map((meal) => {
+                      const ingredients = getMealIngredients(meal);
+                      return (
+                        <div
+                          key={meal.slug}
+                          className="bg-white rounded-3xl p-5 shadow-sm border border-black/5 flex flex-col gap-3"
+                        >
+                          <h3 className="text-sm font-display font-extrabold text-text-primary flex items-center gap-2 border-b border-black/5 pb-2">
+                            <span className="w-1.5 h-3 rounded-full bg-accent-orange"></span>
+                            {meal.name} ({normaliseSlot(meal.type)})
+                          </h3>
+                          <div className="flex flex-col gap-2">
+                            {ingredients.map((ing) => {
+                              const key = `today-${meal.slug}-${ing}`;
+                              const isChecked = !!checkedIngredients[key];
+                              const lookup = findLookupIngredient(ing);
+                              return (
+                                <div
+                                  key={ing}
+                                  className="flex items-center justify-between py-1 border-b border-black/5 last:border-0"
+                                >
+                                  <div
+                                    className="flex items-center gap-3 cursor-pointer flex-1"
+                                    onClick={() => toggleIngredientChecked(key)}
+                                  >
+                                    <div
+                                      className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all ${
+                                        isChecked
+                                          ? "bg-accent-orange border-accent-orange text-white"
+                                          : "border-text-muted"
+                                      }`}
+                                    >
+                                      {isChecked && (
+                                        <svg
+                                          width="10"
+                                          height="8"
+                                          viewBox="0 0 12 9"
+                                          fill="none"
+                                        >
+                                          <path
+                                            d="M1 4L4.5 7.5L11 1"
+                                            stroke="white"
+                                            strokeWidth="3"
+                                            strokeLinecap="round"
+                                          />
+                                        </svg>
+                                      )}
+                                    </div>
+                                    <span
+                                      className={`text-xs ${
+                                        isChecked
+                                          ? "text-text-muted line-through"
+                                          : "text-text-primary font-bold"
+                                      }`}
+                                    >
+                                      {ing}
+                                    </span>
+                                  </div>
+                                  {lookup && lookup.data.qty && (
+                                    <span className="text-[10px] text-text-muted bg-black/5 px-2 py-0.5 rounded-md font-semibold whitespace-nowrap">
+                                      {lookup.data.qty}
+                                    </span>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </section>
+              )}
+            </div>
+          )}
+
+          {/* ── This Week's Meals ───────────────────────────────────────────── */}
+          {activeFilter === "This Week's Meals" && (
+            <div className="flex flex-col gap-8">
+              {filteredWeekPlan.length === 0 ? (
+                <div className="text-center py-12 bg-white rounded-3xl border border-black/5 text-text-muted">
+                  No matching meals found for this week.
+                </div>
+              ) : (
+                filteredWeekPlan.map((dayPlan) => (
+                  <div key={dayPlan.day} className="flex flex-col gap-4">
+                    <div className="flex items-center gap-2">
+                      <div
+                        className={`w-1.5 h-6 rounded-full ${
+                          dayPlan.color || "bg-accent-orange"
+                        }`}
+                      ></div>
+                      <h3 className="text-lg font-display font-extrabold text-text-primary">
+                        {dayPlan.day}
+                      </h3>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {dayPlan.meals.map((meal) => {
+                        const ingredients = getMealIngredients(meal);
+                        return (
+                          <div
+                            key={meal.slug}
+                            className="bg-white rounded-3xl p-5 shadow-sm border border-black/5 flex flex-col gap-3 hover:shadow-md transition-shadow"
+                          >
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <span className="text-[10px] font-bold text-accent-orange uppercase tracking-wider">
+                                  {normaliseSlot(meal.type)}
+                                </span>
+                                <h4 className="text-sm font-display font-extrabold text-text-primary leading-tight mt-0.5">
+                                  {meal.name}
+                                </h4>
+                              </div>
+                            </div>
+                            <div className="h-px bg-black/5 w-full my-1" />
+                            <p className="text-[10px] font-extrabold text-text-muted uppercase tracking-wider">
+                              Ingredients:
+                            </p>
+                            <div className="flex flex-col gap-2">
+                              {ingredients.map((ing) => {
+                                const key = `week-${dayPlan.day}-${meal.slug}-${ing}`;
+                                const isChecked = !!checkedIngredients[key];
+                                return (
+                                  <div
+                                    key={ing}
+                                    className="flex items-center gap-2.5 cursor-pointer"
+                                    onClick={() => toggleIngredientChecked(key)}
+                                  >
+                                    <div
+                                      className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${
+                                        isChecked
+                                          ? "bg-accent-orange border-accent-orange text-white"
+                                          : "border-text-muted"
+                                      }`}
+                                    >
+                                      {isChecked && (
+                                        <svg
+                                          width="8"
+                                          height="6"
+                                          viewBox="0 0 12 9"
+                                          fill="none"
+                                        >
+                                          <path
+                                            d="M1 4L4.5 7.5L11 1"
+                                            stroke="white"
+                                            strokeWidth="3"
+                                            strokeLinecap="round"
+                                          />
+                                        </svg>
+                                      )}
+                                    </div>
+                                    <span
+                                      className={`text-xs ${
+                                        isChecked
+                                          ? "text-text-muted line-through"
+                                          : "text-text-primary font-bold"
+                                      }`}
+                                    >
+                                      {ing}
+                                    </span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+
+          {/* ── All (Consolidated Grocery List) ─────────────────────────────── */}
+          {activeFilter === "All" && (
+            <div className="flex flex-col gap-6">
+              {(() => {
+                const consolidated = getConsolidatedIngredients();
+                if (Object.keys(consolidated).length === 0) {
+                  return (
+                    <div className="text-center py-12 bg-white rounded-3xl border border-black/5 text-text-muted">
+                      No matching ingredients found.
+                    </div>
+                  );
+                }
+                return Object.entries(consolidated).map(([category, items]) => (
+                  <div key={category} className="flex flex-col gap-3">
+                    <h3 className="text-md font-display font-extrabold text-text-primary flex items-center gap-2">
+                      <span className="w-1.5 h-4 rounded-full bg-[#2d4a1e]"></span>
+                      {category}
+                    </h3>
+                    <div className="bg-white rounded-3xl p-5 border border-black/5 shadow-sm flex flex-col gap-3">
+                      {items.map((item) => {
+                        const key = `all-ing-${item.name}`;
+                        const isChecked = !!checkedIngredients[key];
+                        return (
+                          <div
+                            key={item.name}
+                            className="flex items-center justify-between py-1 border-b border-black/5 last:border-0"
+                          >
+                            <div
+                              className="flex items-center gap-3 cursor-pointer flex-1"
+                              onClick={() => toggleIngredientChecked(key)}
+                            >
+                              <div
+                                className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all ${
+                                  isChecked
+                                    ? "bg-[#2d4a1e] border-[#2d4a1e] text-white"
+                                    : "border-text-muted"
+                                }`}
+                              >
+                                {isChecked && (
+                                  <svg
+                                    width="10"
+                                    height="8"
+                                    viewBox="0 0 12 9"
+                                    fill="none"
+                                  >
+                                    <path
+                                      d="M1 4L4.5 7.5L11 1"
+                                      stroke="white"
+                                      strokeWidth="3"
+                                      strokeLinecap="round"
+                                    />
+                                  </svg>
+                                )}
+                              </div>
+                              <span
+                                className={`text-sm ${
+                                  isChecked
+                                    ? "text-text-muted line-through"
+                                    : "text-text-primary font-bold"
+                                }`}
+                              >
+                                {item.name}{" "}
+                                <span className="text-xs text-text-muted/70 font-normal">
+                                  ({item.count} {item.count > 1 ? "meals" : "meal"})
+                                </span>
+                              </span>
+                            </div>
+                            {item.qty && (
+                              <span className="text-xs text-text-muted bg-black/5 px-2 py-0.5 rounded-md font-semibold font-sans">
+                                {item.qty}
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ));
+              })()}
+            </div>
+          )}
+        </>
+      )}
 
       {/* Search Bar */}
       <div className="relative">
