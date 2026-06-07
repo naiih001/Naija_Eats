@@ -10,7 +10,6 @@ import {
   CircleAlertIcon,
 } from "../../constants/icons";
 import { preferencesService } from "../../services/preferences.api";
-// import { preferencesService } from "../../services/preferences.api";
 
 const SetBudget = () => {
   const navigate = useNavigate();
@@ -28,15 +27,16 @@ const SetBudget = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showHint, setShowHint] = useState(false);
 
+  // placeholder ranges
   const getBudgetValuePlaceholder = (tier, freq) => {
     if (freq === "Weekly") {
-      if (tier === "Low") return "4,500 - 7,000";
-      if (tier === "Standard") return "7,000 - 10,000";
-      if (tier === "Premium") return "10,000 - 15,000";
+      if (tier === "Low") return "15,000 - 25,000";
+      if (tier === "Standard") return "25,000 - 45,000";
+      if (tier === "Premium") return "45,000 - 80,000";
     } else {
-      if (tier === "Low") return "30,000 - 50,000";
-      if (tier === "Standard") return "50,000 - 70,000";
-      if (tier === "Premium") return "70,000 - 100,000";
+      if (tier === "Low") return "60,000 - 100,000";
+      if (tier === "Standard") return "100,000 - 180,000";
+      if (tier === "Premium") return "180,000 - 320,000";
     }
   };
 
@@ -53,15 +53,16 @@ const SetBudget = () => {
       budgetValue: value,
     }));
 
-    // Automatically highlight tier based on value
+    // auto tier detection based on input
     if (frequency === "Weekly") {
-      if (numValue < 7000) setBudgetTier("Low");
-      else if (numValue >= 7000 && numValue < 10000) setBudgetTier("Standard");
-      else if (numValue >= 10000) setBudgetTier("Premium");
+      if (numValue < 25000) setBudgetTier("Low");
+      else if (numValue >= 25000 && numValue < 45000) setBudgetTier("Standard");
+      else if (numValue >= 45000) setBudgetTier("Premium");
     } else {
-      if (numValue < 30000) setBudgetTier("Low");
-      else if (numValue >= 50000 && numValue < 70000) setBudgetTier("Standard");
-      else if (numValue >= 70000) setBudgetTier("Premium");
+      if (numValue < 100000) setBudgetTier("Low");
+      else if (numValue >= 100000 && numValue < 180000)
+        setBudgetTier("Standard");
+      else if (numValue >= 180000) setBudgetTier("Premium");
     }
   };
 
@@ -203,7 +204,7 @@ const SetBudget = () => {
         ))}
       </div>
       <p className="text-xs italic text-text-muted font-inter mb-3">
-        Average meal in Lagos starts from ₦4,500
+        Average weekly food budget in Lagos starts from ₦15,000
       </p>
 
       <div className="flex items-center justify-start gap-3 mb-3">
