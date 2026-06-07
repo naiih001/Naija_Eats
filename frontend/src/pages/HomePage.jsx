@@ -6,15 +6,12 @@ import {
   GenerateIcon,
   BasketIcon,
   StarIcon,
-  ChartIcon,
-  BookmarkIcon,
-  TrendUpIcon,
-  StopWatch,
 } from "../constants/icons";
 import transformTimetable from "../constants/weekPlan";
 import { planService } from "../services/plan.api";
 import Button from "../components/ui/Button";
 import EmptyState from "./EmptyState";
+// import TrendingRecipes from "../components/shared/TrendingRecipes";
 
 /* ─── module-level helpers ─────────────────────────────────────────────── */
 const SLOT_ORDER = ["Breakfast", "Lunch", "Dinner"];
@@ -43,7 +40,7 @@ const HomePage = () => {
   const [planLoading, setPlanLoading] = useState(true);
   const [hasPlan, setHasPlan] = useState(true);
 
-  const categories = ["All", "Yoruba", "Igbo", "Hausa"];
+  // const categories = ["All", "Yoruba", "Igbo", "Hausa"];
 
   useEffect(() => {
     const fetchPlan = async () => {
@@ -81,7 +78,7 @@ const HomePage = () => {
       {/* ── Hero: Today's Meals ──────────────────────────────────────────── */}
       <section className="flex flex-col gap-4">
         {/* header */}
-        <div className="flex justify-between items-end">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div className="flex flex-col gap-1">
             <div className="inline-flex items-center gap-2 bg-[#E8F5E9] text-text-primary px-3 py-1 rounded-full w-fit">
               <div className="w-4 h-4 bg-text-primary rounded-full flex items-center justify-center text-[8px] text-white">
@@ -101,15 +98,15 @@ const HomePage = () => {
               </span>
             </h1>
           </div>
-          <div className="flex flex-col gap-2 shrink-0">
+          <div className="flex flex-col sm:flex-row gap-2 shrink-0">
             <Button
-              className="py-3 px-5 text-sm font-bold flex items-center gap-2"
+              className="py-3 px-5 text-sm font-bold flex items-center justify-center gap-2"
               onClick={() => navigate("/menu-page")}
             >
               View Menu <ChevronRightIcon className="w-4 h-4" />
             </Button>
             <button
-              className="py-3 px-5 border-2 border-text-primary text-text-primary rounded-xl font-bold text-sm hover:bg-text-primary hover:text-white transition-all cursor-pointer"
+              className="py-3 px-5 border-2 border-text-primary text-text-primary rounded-xl font-bold text-sm hover:bg-text-primary hover:text-white transition-all cursor-pointer flex items-center justify-center"
               onClick={() => navigate("/market")}
             >
               Market
@@ -134,8 +131,10 @@ const HomePage = () => {
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
             {todayMeals.map((meal, idx) => {
               const slotLabel = normaliseSlot(meal.type);
-              const meta =
-                SLOT_META[slotLabel] ?? { emoji: "🍽️", label: slotLabel };
+              const meta = SLOT_META[slotLabel] ?? {
+                emoji: "🍽️",
+                label: slotLabel,
+              };
               return (
                 <div
                   key={meal.slug ?? idx}
@@ -322,7 +321,7 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* ── Trending Recipes ─────────────────────────────────────────────── */}
+      {/* ── Trending Recipes ───────────────────────────────────────────────
       <section className="flex flex-col gap-8">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <h2 className="text-2xl lg:text-3xl font-display font-bold text-text-primary">
@@ -340,99 +339,8 @@ const HomePage = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <div className="lg:col-span-7 bg-white rounded-4xl overflow-hidden group cursor-pointer border border-text-muted/5">
-            <div className="relative h-100 lg:h-125">
-              <img
-                src="/images/fisherman_soup.png"
-                alt="Fisherman's Harvest Soup"
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-              <div className="absolute bottom-8 left-8 right-8 text-white">
-                <span className="px-3 py-1.5 bg-accent-orange rounded-xl text-white mb-4 inline-block">
-                  Trending
-                </span>
-                <h3 className="text-3xl lg:text-4xl font-display font-bold mb-2">
-                  Fisherman&apos;s Harvest Soup
-                </h3>
-                <p className="text-white/70 text-sm mb-6 max-w-md line-clamp-2">
-                  A rich, aromatic seafood delicacy from the coastal regions,
-                  reimagined for the modern palate.
-                </p>
-                <div className="flex justify-between items-center">
-                  <div className="flex gap-6 text-xs font-bold opacity-80">
-                    <div className="flex items-center gap-2">
-                      <StopWatch className="w-4 h-4" />
-                      <span>45 Min</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 flex items-center justify-center">
-                        <ChartIcon />
-                      </div>
-                      <span>Advanced</span>
-                    </div>
-                  </div>
-                  <button className="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-md flex items-center justify-center hover:bg-white/20 transition-colors">
-                    <BookmarkIcon />
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="lg:col-span-5 grid grid-cols-1 gap-6">
-            <div className="bg-[#1A3013] rounded-4xl overflow-hidden group cursor-pointer h-full min-h-60 relative">
-              <img
-                src="/images/ribeye.png"
-                alt="Suya-Spiced Ribeye"
-                className="w-full h-full object-cover opacity-80 transition-transform duration-700 group-hover:scale-105"
-              />
-              <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent" />
-              <div className="absolute bottom-6 left-6 text-white">
-                <h4 className="text-xl font-display font-bold mb-1">
-                  Suya-Spiced Ribeye
-                </h4>
-                <span className="text-[10px] font-bold text-white/60">
-                  25 Min &bull; Medium Effort
-                </span>
-              </div>
-              <div className="absolute bottom-6 right-6 text-white opacity-40">
-                <TrendUpIcon />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-6 h-full min-h-60">
-              <div className="bg-[#F8F8DF] rounded-4xl overflow-hidden border border-text-muted/10 group cursor-pointer relative">
-                <img
-                  src="/images/puffpuff.png"
-                  alt="Spiced Puff-Puff"
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors" />
-                <div className="absolute bottom-4 left-4 right-4">
-                  <h4 className="text-sm font-bold text-white">
-                    Spiced Puff-Puff
-                  </h4>
-                </div>
-              </div>
-              <div className="bg-[#F8F8DF] rounded-4xl overflow-hidden border border-text-muted/10 group cursor-pointer relative">
-                <img
-                  src="/images/vegetable.svg"
-                  alt="Fonio Superbowl"
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors" />
-                <div className="absolute bottom-4 left-4 right-4">
-                  <h4 className="text-sm font-bold text-white">
-                    Fonio Superbowl
-                  </h4>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+        <TrendingRecipes />
+      </section> */}
     </div>
   );
 };

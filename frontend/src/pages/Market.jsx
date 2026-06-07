@@ -8,7 +8,6 @@ import {
   getTodayName,
   normaliseSlot,
   getMealIngredients,
-  findLookupIngredient,
   SLOT_ORDER,
 } from "../utils/marketHelpers";
 
@@ -149,7 +148,7 @@ const Market = () => {
     const ingredients = getMealIngredients(meal);
     return (
       meal.name.toLowerCase().includes(term) ||
-      ingredients.some((ing) => ing.toLowerCase().includes(term))
+      ingredients.some((ing) => ing.name.toLowerCase().includes(term))
     );
   });
 
@@ -161,7 +160,7 @@ const Market = () => {
         const ingredients = getMealIngredients(meal);
         return (
           meal.name.toLowerCase().includes(term) ||
-          ingredients.some((ing) => ing.toLowerCase().includes(term))
+          ingredients.some((ing) => ing.name.toLowerCase().includes(term))
         );
       });
       return { ...dayPlan, meals };
@@ -176,16 +175,11 @@ const Market = () => {
       dayPlan.meals.forEach((meal) => {
         const ingredients = getMealIngredients(meal);
         ingredients.forEach((ing) => {
-          const lookup = findLookupIngredient(ing);
-          const cleanName = lookup ? lookup.key : ing;
-          const category = lookup ? lookup.data.category : "Other";
-          const qty = lookup ? lookup.data.qty : null;
+          const cleanName = ing.name;
+          const category = ing.category || "Other";
+          const qty = ing.quantity || "";
 
-          if (
-            searchTerm &&
-            !cleanName.toLowerCase().includes(term) &&
-            !ing.toLowerCase().includes(term)
-          ) {
+          if (searchTerm && !cleanName.toLowerCase().includes(term)) {
             return;
           }
 

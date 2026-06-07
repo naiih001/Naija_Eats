@@ -12,11 +12,20 @@ export default function SwapMealModal({ swapItem, onClose, onSwapComplete }) {
   const [isCustomMode, setIsCustomMode] = useState(false);
   const [customMealName, setCustomMealName] = useState("");
   const [customMealPrice, setCustomMealPrice] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   useEffect(() => {
     const fetchMeals = async () => {
       try {
-        const res = await planService.getMeals();
+        setLoadingMeals(true);
+        const res = await planService.getMeals({ search: debouncedSearch, limit: 100 });
         // The API wraps the response in 'data', and axios also wraps in 'data'
         const mealsArray =
           res.data?.data?.meals ||
@@ -30,7 +39,7 @@ export default function SwapMealModal({ swapItem, onClose, onSwapComplete }) {
       }
     };
     if (swapItem) fetchMeals();
-  }, [swapItem]);
+  }, [swapItem, debouncedSearch]);
 
   const filteredAvailableMeals = availableMeals.filter(
     (m) =>
