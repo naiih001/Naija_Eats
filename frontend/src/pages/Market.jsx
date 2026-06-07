@@ -31,7 +31,7 @@ const Market = () => {
   const [todayMeals, setTodayMeals] = useState([]);
   const [planLoading, setPlanLoading] = useState(true);
   const [hasPlan, setHasPlan] = useState(true);
-  
+
   const [swapItem, setSwapItem] = useState(null);
 
   const [checkedIngredients, setCheckedIngredients] = useState(() => {
@@ -66,11 +66,9 @@ const Market = () => {
         const cached = localStorage.getItem("weekly_meal_plan");
         if (cached) {
           data = JSON.parse(cached);
-          console.log("Loaded timetable from cache in Market:", data);
         } else {
           data = await planService.getTimetable();
           localStorage.setItem("weekly_meal_plan", JSON.stringify(data));
-          console.log("Fetched timetable from backend in Market:", data);
         }
         const parsedWeekPlan = transformTimetable(data);
         setWeekPlan(parsedWeekPlan);
@@ -222,7 +220,6 @@ const Market = () => {
       </h1>
       <WeeklySummaryCard />
 
-      {/* Filter Tabs */}
       <div className="flex gap-2 overflow-x-auto no-scrollbar py-1">
         {filters.map((filter) => (
           <button
@@ -240,7 +237,6 @@ const Market = () => {
       </div>
 
       {planLoading ? (
-        /* skeleton — inline grid, not a sub-component */
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {[0, 1, 2].map((i) => (
             <div
@@ -286,7 +282,6 @@ const Market = () => {
         </>
       )}
 
-      {/* Search Bar */}
       <div className="relative">
         <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted w-5 h-5" />
         <input
@@ -299,7 +294,6 @@ const Market = () => {
         />
       </div>
 
-      {/* Custom Items Section */}
       <CustomItemsSection
         customItems={customItems}
         searchTerm={searchTerm}
@@ -314,7 +308,7 @@ const Market = () => {
         toggleCustomBought={toggleCustomBought}
       />
 
-      <SwapMealModal 
+      <SwapMealModal
         swapItem={swapItem}
         onClose={() => setSwapItem(null)}
         onSwapComplete={handleSwapComplete}
