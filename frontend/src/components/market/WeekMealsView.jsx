@@ -48,47 +48,54 @@ export default function WeekMealsView({
                       Ingredients:
                     </p>
                     <div className="flex flex-col gap-2">
-                      {ingredients.map((ing) => {
-                        const key = `week-${dayPlan.day}-${meal.slug}-${ing}`;
+                      {ingredients.map((ingObj) => {
+                        const key = `week-${dayPlan.day}-${meal.slug}-${ingObj.name}`;
                         const isChecked = !!checkedIngredients[key];
                         return (
                           <div
-                            key={ing}
-                            className="flex items-center gap-2.5 cursor-pointer"
+                            key={ingObj.name}
+                            className="flex items-center justify-between cursor-pointer"
                             onClick={() => toggleIngredientChecked(key)}
                           >
-                            <div
-                              className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${
-                                isChecked
-                                  ? "bg-accent-orange border-accent-orange text-white"
-                                  : "border-text-muted"
-                              }`}
-                            >
-                              {isChecked && (
-                                <svg
-                                  width="8"
-                                  height="6"
-                                  viewBox="0 0 12 9"
-                                  fill="none"
-                                >
-                                  <path
-                                    d="M1 4L4.5 7.5L11 1"
-                                    stroke="white"
-                                    strokeWidth="3"
-                                    strokeLinecap="round"
-                                  />
-                                </svg>
-                              )}
+                            <div className="flex items-center gap-2.5">
+                              <div
+                                className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${
+                                  isChecked
+                                    ? "bg-accent-orange border-accent-orange text-white"
+                                    : "border-text-muted"
+                                }`}
+                              >
+                                {isChecked && (
+                                  <svg
+                                    width="8"
+                                    height="6"
+                                    viewBox="0 0 12 9"
+                                    fill="none"
+                                  >
+                                    <path
+                                      d="M1 4L4.5 7.5L11 1"
+                                      stroke="white"
+                                      strokeWidth="3"
+                                      strokeLinecap="round"
+                                    />
+                                  </svg>
+                                )}
+                              </div>
+                              <span
+                                className={`text-xs ${
+                                  isChecked
+                                    ? "text-text-muted line-through"
+                                    : "text-text-primary font-bold"
+                                }`}
+                              >
+                                {ingObj.name}
+                              </span>
                             </div>
-                            <span
-                              className={`text-xs ${
-                                isChecked
-                                  ? "text-text-muted line-through"
-                                  : "text-text-primary font-bold"
-                              }`}
-                            >
-                              {ing}
-                            </span>
+                            {ingObj.quantity && (
+                              <span className="text-[10px] text-text-muted">
+                                {ingObj.quantity}
+                              </span>
+                            )}
                           </div>
                         );
                       })}

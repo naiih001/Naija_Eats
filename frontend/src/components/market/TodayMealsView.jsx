@@ -6,7 +6,7 @@ import {
   normaliseSlot,
   SLOT_EMOJI,
   getMealIngredients,
-  findLookupIngredient,
+  // findLookupIngredient,
 } from "../../utils/marketHelpers";
 
 export default function TodayMealsView({
@@ -130,13 +130,12 @@ export default function TodayMealsView({
                     {meal.name} ({normaliseSlot(meal.type)})
                   </h3>
                   <div className="flex flex-col gap-2">
-                    {ingredients.map((ing) => {
-                      const key = `today-${meal.slug}-${ing}`;
+                    {ingredients.map((ingObj) => {
+                      const key = `today-${meal.slug}-${ingObj.name}`;
                       const isChecked = !!checkedIngredients[key];
-                      const lookup = findLookupIngredient(ing);
                       return (
                         <div
-                          key={ing}
+                          key={ingObj.name}
                           className="flex items-center justify-between py-1 border-b border-black/5 last:border-0"
                         >
                           <div
@@ -167,18 +166,18 @@ export default function TodayMealsView({
                               )}
                             </div>
                             <span
-                              className={`text-xs ${
+                              className={`text-sm ${
                                 isChecked
                                   ? "text-text-muted line-through"
                                   : "text-text-primary font-bold"
                               }`}
                             >
-                              {ing}
+                              {ingObj.name}
                             </span>
                           </div>
-                          {lookup && lookup.data.qty && (
-                            <span className="text-[10px] text-text-muted bg-black/5 px-2 py-0.5 rounded-md font-semibold whitespace-nowrap">
-                              {lookup.data.qty}
+                          {ingObj.quantity && (
+                            <span className="text-xs font-bold text-text-muted">
+                              {ingObj.quantity}
                             </span>
                           )}
                         </div>
