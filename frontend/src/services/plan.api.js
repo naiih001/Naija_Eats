@@ -79,7 +79,7 @@ export const planService = {
   getTimetable: () => getWithAuth("/timetable/generate"),
   generateTimetable: () => postWithAuth("/timetable/generate"),
   getMeals: (category) =>
-    getWithAuth(category ? `/meals?category=${category}` : "/meals"),
+    getWithAuth(category ? `/meals?category=${category}&limit=100` : "/meals?limit=100"),
   createCustomMeal: (data) => postWithAuth("/meals/custom", data),
   updateTimetableItem: (itemId, mealId) => putWithAuth(`/timetable/items/${itemId}`, { mealId }),
 };
