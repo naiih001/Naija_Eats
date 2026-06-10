@@ -7,7 +7,9 @@ import { router as authRoutes } from "./routes/auth";
 import onboardingRoutes from "./routes/onboarding";
 import profileRoutes from "./routes/profile";
 import timetableRoutes from "./routes/timetable";
+import adminRoutes from "./routes/admin";
 import { authMiddleware } from "./middleware/auth";
+import { adminMiddleware } from "./middleware/admin";
 
 const app: Application = express();
 
@@ -34,6 +36,7 @@ app.use("/meals", authMiddleware, mealsRoutes);
 app.use("/timetable", authMiddleware, timetableRoutes);
 app.use("/api", authMiddleware, onboardingRoutes);
 app.use("/profile", authMiddleware, profileRoutes);
+app.use("/admin", authMiddleware, adminMiddleware, adminRoutes);
 
 // Catch-all 404 handler
 app.use((req, res) => {

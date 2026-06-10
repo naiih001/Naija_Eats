@@ -36,7 +36,7 @@ export const authMiddleware = async (
         id: true,
         email: true,
         phone_number: true,
-        // Don't include password
+        role: true,
       }
     });
 

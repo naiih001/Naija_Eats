@@ -11,6 +11,7 @@ model User {
   email          String    @unique
   password       String // Note: Store as hashed password
   phone_number   String?
+  role           String    @default("user")
   profile        Profile?
   isVerified     Boolean   @default(false)
   verifyToken    String?   @unique
@@ -75,6 +76,7 @@ model meals {
   cuisine        String?
   instructions   String?
   ingredients    Json?
+  image_url      String?
   plan_items     meal_plan_items[]
 }
 

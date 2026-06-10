@@ -13,9 +13,8 @@ export const postWithAuth = async (endpoint, body) => {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify(body),
+    body: body ? JSON.stringify(body) : undefined,
   });
-
 
   const data = await response.json();
 
@@ -27,12 +26,13 @@ export const postWithAuth = async (endpoint, body) => {
 };
 
 export const preferencesService = {
-  saveBudgetPreferences: (data) => postWithAuth("/api/users/preferences/budget", data),
-  saveCookingFrequency: (data) => postWithAuth("/api/users/preferences/frequency", data),
-  saveFoodPreferences: (data) => postWithAuth("/api/users/preferences/food", data),
-
+  saveBudgetPreferences: (data) =>
+    postWithAuth("/api/users/preferences/budget", data),
+  saveCookingFrequency: (data) =>
+    postWithAuth("/api/users/preferences/frequency", data),
+  saveFoodPreferences: (data) =>
+    postWithAuth("/api/users/preferences/food", data),
 
   /** generate a timetable from the saved preferences */
   generateTimetable: () => postWithAuth("/timetable/generate"),
 };
-

@@ -133,7 +133,9 @@ export function getMealImage(mealName) {
 export default function transformTimetable(apiData) {
   const grouped = {};
 
-  for (const item of apiData.data.items) {
+  const items = apiData.items || apiData.data?.items || [];
+
+  for (const item of items) {
     const { day_of_week, meal_slot, meal } = item;
 
     if (!grouped[day_of_week]) {
@@ -145,9 +147,12 @@ export default function transformTimetable(apiData) {
     }
 
     grouped[day_of_week].meals.push({
+      id: item.id,
+      mealId: meal.id,
       slug: meal.name.toLowerCase().replace(/\s+/g, "-"),
       type: meal_slot.toUpperCase(),
       name: meal.name,
+      ingredients: meal.ingredients || [],
       price: `₦${Number(meal.price_min).toLocaleString()} - ₦${Number(meal.price_max).toLocaleString()}`,
       icon: SLOT_ICONS[meal_slot] ?? (
         <UtensilsIcon className="text-text-primary" />

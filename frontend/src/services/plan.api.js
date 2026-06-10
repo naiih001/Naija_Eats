@@ -16,10 +16,59 @@ const getWithAuth = async (endpoint) => {
   });
 
   const data = await response.json();
-  console.log("Current meal plan response:", data);
 
   if (!response.ok) {
-    throw new Error(data.message || "Failed to fetch current meal plan");
+    throw new Error(data.message || "Failed to fetch data");
+  }
+
+  return data;
+};
+
+const postWithAuth = async (endpoint, body = {}) => {
+  const token = localStorage.getItem("token");
+
+  if (!token) {
+    throw new Error("No authentication token found. Please sign in again.");
+  }
+
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(body),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message || "Failed to post data");
+  }
+
+  return data;
+};
+
+const putWithAuth = async (endpoint, body) => {
+  const token = localStorage.getItem("token");
+
+  if (!token) {
+    throw new Error("No authentication token found. Please sign in again.");
+  }
+
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(body),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message || "Failed to update data");
   }
 
   return data;
@@ -28,7 +77,10 @@ const getWithAuth = async (endpoint) => {
 export const planService = {
   getCurrentMealPlan: () => getWithAuth("/api/meal-plans/current"),
   getTimetable: () => getWithAuth("/timetable/generate"),
+  generateTimetable: () => postWithAuth("/timetable/generate"),
   getMeals: (category) =>
-    getWithAuth(category ? `/meals/meals?category=${category}` : "/meals/meals"),
+    getWithAuth(category ? `/meals?category=${category}&limit=100` : "/meals?limit=100"),
+  createCustomMeal: (data) => postWithAuth("/meals/custom", data),
+  updateTimetableItem: (itemId, mealId) => putWithAuth(`/timetable/items/${itemId}`, { mealId }),
 };
 
