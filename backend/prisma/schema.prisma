@@ -75,6 +75,7 @@ model meals {
   cuisine        String?
   instructions   String?
   ingredients    Json?
+  image_url      String?
   plan_items     meal_plan_items[]
 }
 
