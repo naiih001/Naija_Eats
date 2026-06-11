@@ -170,6 +170,11 @@ router.post("/users/preferences/food", async (req: Request, res: Response) => {
       }
     });
 
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { onboarded: true },
+    });
+
     return _res.success(200, res, "Food preferences saved successfully");
   } catch (err) {
     console.error(err);

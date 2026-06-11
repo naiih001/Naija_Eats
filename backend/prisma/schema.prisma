@@ -14,6 +14,7 @@ model User {
   role           String    @default("user")
   profile        Profile?
   isVerified     Boolean   @default(false)
+  onboarded      Boolean   @default(false)
   verifyToken    String?   @unique
   verifyTokenExp DateTime?
   resetToken     String?   @unique
