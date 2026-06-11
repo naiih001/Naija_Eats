@@ -214,6 +214,7 @@ router.post("/login", async (req: Request, res: Response) => {
         email: user.email,
         phone_number: user.phone_number,
         isVerified: user.isVerified,
+        onboarded: user.onboarded,
         created_at: user.created_at,
         profile: user.profile,
       },
