@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import Button from "../components/ui/Button";
 import { FilterIcon } from "../constants/icons";
 import transformTimetable from "../constants/weekPlan";
 import { planService } from "../services/plan.api";
 import { WeeklySummaryCard } from "../components/ui/WeeklySummaryCard";
 import SwapMealModal from "../components/shared/SwapMealModal";
+
+import { getWeeklyPlanKey } from "../utils/planHelpers";
 
 const WeeklyPlan = () => {
   const navigate = useNavigate();
@@ -16,14 +19,14 @@ const WeeklyPlan = () => {
   useEffect(() => {
     const getMealPlan = async () => {
       try {
-        const cached = localStorage.getItem("weekly_meal_plan");
+        const cached = localStorage.getItem(getWeeklyPlanKey());
         if (cached) {
           const parsed = JSON.parse(cached);
           setWeekPlan(transformTimetable(parsed));
           setLoading(false);
         } else {
           const data = await planService.getTimetable();
-          localStorage.setItem("weekly_meal_plan", JSON.stringify(data));
+          localStorage.setItem(getWeeklyPlanKey(), JSON.stringify(data));
           setWeekPlan(transformTimetable(data));
           setLoading(false);
         }
@@ -41,7 +44,7 @@ const WeeklyPlan = () => {
       try {
         const data = await planService.generateTimetable();
         localStorage.setItem(
-          "weekly_meal_plan",
+          getWeeklyPlanKey(),
           JSON.stringify(data.data || data),
         );
         setWeekPlan(transformTimetable(data.data || data));
@@ -60,7 +63,7 @@ const WeeklyPlan = () => {
   };
 
   const handleSwapComplete = (updatedData) => {
-    localStorage.setItem("weekly_meal_plan", JSON.stringify(updatedData));
+    localStorage.setItem(getWeeklyPlanKey(), JSON.stringify(updatedData));
     setWeekPlan(transformTimetable(updatedData));
   };
 
@@ -152,7 +155,10 @@ const WeeklyPlan = () => {
           <Button
             variant="primary"
             className="w-full"
-            onClick={() => navigate("/market")}
+            onClick={() => {
+              toast.success("Meal plan accepted and saved!");
+              navigate("/market");
+            }}
             disabled={loading}
           >
             Accept Plan

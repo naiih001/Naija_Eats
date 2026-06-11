@@ -157,7 +157,7 @@ export default function transformTimetable(apiData) {
       icon: SLOT_ICONS[meal_slot] ?? (
         <UtensilsIcon className="text-text-primary" />
       ),
-      image: getMealImage(meal.name),
+      image: meal.image_url || getMealImage(meal.name),
     });
   }
 

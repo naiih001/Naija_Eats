@@ -17,6 +17,8 @@ import ConsolidatedListView from "../components/market/ConsolidatedListView";
 import CustomItemsSection from "../components/market/CustomItemsSection";
 import SwapMealModal from "../components/shared/SwapMealModal";
 
+import { getWeeklyPlanKey } from "../utils/planHelpers";
+
 const Market = () => {
   const [activeFilter, setActiveFilter] = useState("Today's Meals");
   const [searchTerm, setSearchTerm] = useState("");
@@ -62,12 +64,12 @@ const Market = () => {
     const fetchPlan = async () => {
       try {
         let data;
-        const cached = localStorage.getItem("weekly_meal_plan");
+        const cached = localStorage.getItem(getWeeklyPlanKey());
         if (cached) {
           data = JSON.parse(cached);
         } else {
           data = await planService.getTimetable();
-          localStorage.setItem("weekly_meal_plan", JSON.stringify(data));
+          localStorage.setItem(getWeeklyPlanKey(), JSON.stringify(data));
         }
         const parsedWeekPlan = transformTimetable(data);
         setWeekPlan(parsedWeekPlan);
@@ -99,7 +101,7 @@ const Market = () => {
   };
 
   const handleSwapComplete = (updatedData) => {
-    localStorage.setItem("weekly_meal_plan", JSON.stringify(updatedData));
+    localStorage.setItem(getWeeklyPlanKey(), JSON.stringify(updatedData));
     const parsedWeekPlan = transformTimetable(updatedData);
     setWeekPlan(parsedWeekPlan);
 

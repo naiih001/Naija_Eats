@@ -86,7 +86,7 @@ curl -X PUT http://localhost:3000/profile/me \
 ## Save Combined Preference Payload
 
 ```bash
-curl -X POST http://localhost:3000/preference \
+curl -X POST http://localhost:3000/meals/preference \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -105,21 +105,21 @@ curl -X POST http://localhost:3000/preference \
 ## Get Meals
 
 ```bash
-curl http://localhost:3000/meals \
+curl http://localhost:3000/meals/ \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
 Filtered by category:
 
 ```bash
-curl "http://localhost:3000/meals?category=lunch" \
+curl "http://localhost:3000/meals/?category=lunch" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
 ## Generate Meal Plan From `/meals-plan/generate`
 
 ```bash
-curl -X POST http://localhost:3000/meals-plan/generate \
+curl -X POST http://localhost:3000/meals/meals-plan/generate \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -136,7 +136,7 @@ curl -X POST http://localhost:3000/meals-plan/generate \
 ## Get Meal Plan By ID
 
 ```bash
-curl http://localhost:3000/meals-plan/PLAN_ID \
+curl http://localhost:3000/meals/meals-plan/PLAN_ID \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
@@ -148,7 +148,7 @@ curl -X POST http://localhost:3000/api/users/preferences/budget \
   -H "Content-Type: application/json" \
   -d '{
     "budgetTier": "Standard",
-    "budgetValue": "7000-10000",
+    "budgetValue": "8500",
     "frequency": "Weekly",
     "fluctuationBuffer": "10%"
   }'
@@ -200,4 +200,82 @@ curl http://localhost:3000/api/meal-plans/current \
 ```bash
 curl http://localhost:3000/api/meal-plans/current/details \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+## Get Authenticated User
+
+```bash
+curl http://localhost:3000/auth/me \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+## Update Profile (Auth Route)
+
+```bash
+curl -X PUT http://localhost:3000/auth/profile \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "full_name": "New Name",
+    "avatar_url": "https://example.com/avatar.jpg"
+  }'
+```
+
+## Change Password
+
+```bash
+curl -X POST http://localhost:3000/auth/change-password \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "oldPassword": "current-password",
+    "newPassword": "new-password123"
+  }'
+```
+
+## Get Budget Status
+
+```bash
+curl http://localhost:3000/api/budget/status \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+## Get Budget Preferences
+
+```bash
+curl http://localhost:3000/api/users/preferences/budget \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+## Get Active Timetable
+
+```bash
+curl http://localhost:3000/timetable/generate \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+## Generate Timetable
+
+```bash
+curl -X POST http://localhost:3000/timetable/generate \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+## Swap Meal In Timetable
+
+```bash
+curl -X PUT http://localhost:3000/timetable/items/ITEM_UUID \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "mealId": "new-meal-uuid"
+  }'
+```
+
+## Upload Meal Image (Admin)
+
+```bash
+curl -X PUT http://localhost:3000/admin/meals/MEAL_ID/image \
+  -H "Authorization: Bearer ADMIN_JWT_TOKEN" \
+  -F "image=@/path/to/image.jpg"
 ```

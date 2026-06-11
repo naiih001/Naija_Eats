@@ -1,5 +1,11 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
+const handle401 = () => {
+  localStorage.removeItem("token");
+  localStorage.removeItem("user");
+  window.location.href = "/sign-in?expired=true";
+};
+
 export const authService = {
   async signIn(email, password) {
     const response = await fetch(`${API_BASE_URL}/auth/login`, {
@@ -18,10 +24,22 @@ export const authService = {
 
     if (data.data?.token) {
       localStorage.setItem("token", data.data.token);
+      let userObj;
       if (data.data?.user) {
-        localStorage.setItem("user", JSON.stringify(data.data.user));
+        userObj = data.data.user;
+        localStorage.setItem("user", JSON.stringify(userObj));
       } else {
-        localStorage.setItem("user", JSON.stringify({ email }));
+        userObj = { email };
+        localStorage.setItem("user", JSON.stringify(userObj));
+      }
+
+      // Migrate guest plan to user-specific plan key
+      const guestPlan = localStorage.getItem("weekly_meal_plan");
+      if (guestPlan) {
+        const userKey = userObj.id ? `weekly_meal_plan_${userObj.id}` : `weekly_meal_plan_${userObj.email}`;
+        localStorage.setItem(userKey, guestPlan);
+        // Clear original guest cache
+        localStorage.removeItem("weekly_meal_plan");
       }
     }
 
@@ -125,6 +143,11 @@ export const authService = {
       },
     });
 
+    if (response.status === 401) {
+      handle401();
+      throw new Error("Your session has expired. Please sign in again.");
+    }
+
     const data = await response.json();
 
     if (!response.ok) {
@@ -154,6 +177,11 @@ export const authService = {
       },
       body: JSON.stringify(updates),
     });
+
+    if (response.status === 401) {
+      handle401();
+      throw new Error("Your session has expired. Please sign in again.");
+    }
 
     const data = await response.json();
 

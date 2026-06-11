@@ -1,5 +1,11 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
+const handle401 = () => {
+  localStorage.removeItem("token");
+  localStorage.removeItem("user");
+  window.location.href = "/sign-in?expired=true";
+};
+
 export const postWithAuth = async (endpoint, body) => {
   const token = localStorage.getItem("token");
 
@@ -15,6 +21,11 @@ export const postWithAuth = async (endpoint, body) => {
     },
     body: body ? JSON.stringify(body) : undefined,
   });
+
+  if (response.status === 401) {
+    handle401();
+    throw new Error("Your session has expired. Please sign in again.");
+  }
 
   const data = await response.json();
 

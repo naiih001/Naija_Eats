@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import { prisma } from "../config/prisma";
-import { _res } from "../utils/helper";
+import { _res, safeParseInstructions } from "../utils/helper";
 
 const router = Router();
 
@@ -84,8 +84,13 @@ router.get("/", async (req: Request, res: Response) => {
       prisma.meals.count({ where }),
     ]);
 
+    const parsed = meals.map((m) => ({
+      ...m,
+      instructions: m.instructions ? safeParseInstructions(m.instructions) : null,
+    }));
+
     return _res.success(200, res, "Meals retrieved successfully", {
-      meals,
+      meals: parsed,
       pagination: {
         page,
         limit,

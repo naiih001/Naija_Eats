@@ -5,6 +5,8 @@ import { MealIcon } from "../../constants/icons";
 import { preferencesService } from "../../services/preferences.api";
 import Button from "../../components/ui/Button";
 
+import { getWeeklyPlanKey } from "../../utils/planHelpers";
+
 const GeneratingPlan = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [hasError, setHasError] = useState(false);
@@ -18,7 +20,7 @@ const GeneratingPlan = () => {
       try {
         // Generate the timetable (preferences have already been saved in previous steps)
         await preferencesService.generateTimetable();
-        localStorage.removeItem("weekly_meal_plan");
+        localStorage.removeItem(getWeeklyPlanKey());
 
         if (!active) return;
         toast.success("Meal plan generated successfully!");

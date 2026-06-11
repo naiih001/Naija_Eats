@@ -31,7 +31,7 @@ function transformMenuMeals(apiData) {
       price: `₦${Number(meal.price_min).toLocaleString()} - ₦${Number(meal.price_max).toLocaleString()}`,
       duration: `${meal.prep_time_mins} mins`,
       description: meal.instructions,
-      img: getMealImage(meal.name),
+      img: meal.image_url || getMealImage(meal.name),
       category: [CATEGORY_MAP[meal.category] ?? "Proteins"],
     }));
 }
