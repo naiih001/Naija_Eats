@@ -1,18 +1,8 @@
 import { Router, Request, Response } from "express";
 import multer from "multer";
-import { v2 as cloudinary } from "cloudinary";
+import cloudinary from "../config/cloudinary";
 import { prisma } from "../config/prisma";
 import { _res } from "../utils/helper";
-
-const cloudName = process.env.CLOUDINARY_CLOUD_NAME || "doy5lkpqj";
-const apiKey = process.env.CLOUDINARY_API_KEY || "474437244269365";
-const apiSecret = process.env.CLOUDINARY_API_SECRET || "R73Yh2369bmRe0bnl2p4YvWWo5Y";
-
-cloudinary.config({
-  cloud_name: cloudName,
-  api_key: apiKey,
-  api_secret: apiSecret,
-});
 
 const storage = multer.diskStorage({
   filename: (_req, file, cb) => {
@@ -52,6 +42,9 @@ router.put(
 
       const result = await cloudinary.uploader.upload(req.file!.path as string, {
         folder: "naija_eats/meals",
+        type: "upload",
+        api_key: process.env.CLOUDINARY_API_KEY,
+        api_secret: process.env.CLOUDINARY_API_SECRET,
       });
 
       const updated = await prisma.meals.update({

@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import { prisma } from "../config/prisma";
-import { _res } from "../utils/helper";
+import { _res, safeParseInstructions } from "../utils/helper";
 import { calculateBudgetTier, getBudgetStatus } from "../utils/budget";
 import { generateTimetable } from "../services/timetable.service";
 
@@ -208,11 +208,21 @@ router.get("/meal-plans/current", async (req: Request, res: Response) => {
 
     if (!plan) return _res.error(404, res, "No active meal plan found");
 
+    const parsedPlan = {
+      ...plan,
+      items: plan.items.map((item) => ({
+        ...item,
+        meal: item.meal
+          ? { ...item.meal, instructions: safeParseInstructions((item.meal as any).instructions) }
+          : item.meal,
+      })),
+    };
+
     // Move Logic: Use real budget status data instead of hardcoded values
     const budgetStatus = await getBudgetStatus(user.id);
 
     return _res.success(200, res, "Meal plan retrieved successfully", {
-      plan,
+      plan: parsedPlan,
       budgetStats: budgetStatus ? {
         weeklyBudget: `₦${budgetStatus.limit.toLocaleString()}`,
         currentSpending: `₦${budgetStatus.currentSpending.toLocaleString()}`,
@@ -247,11 +257,18 @@ router.get(
 
       if (!plan) return _res.error(404, res, "No active meal plan found");
 
+      const parsedItems = plan.items.map((item) => ({
+        ...item,
+        meal: item.meal
+          ? { ...item.meal, instructions: safeParseInstructions((item.meal as any).instructions) }
+          : item.meal,
+      }));
+
       return _res.success(
         200,
         res,
         "Meal plan details retrieved successfully",
-        { items: plan.items },
+        { items: parsedItems },
       );
     } catch (err) {
       return _res.error(500, res, "Failed to retrieve meal plan details");

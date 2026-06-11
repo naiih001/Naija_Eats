@@ -2,79 +2,6 @@
 
 The Express app is defined in [src/app.ts](/home/isaac/Documents/caya/Naija_Eats/backend/src/app.ts:1).
 
-## Timetable Routes
-
-
-### `GET /timetable/generate`
-Retrieves the active timetable for the authenticated user.
-
-**Success Response:**
-```json
-{
-  "success": true,
-  "message": "Timetable retrieved successfully",
-  "data": {
-    "id": "plan-uuid",
-    "status": "active",
-    "items": [
-      {
-        "id": "item-uuid",
-        "meal": { 
-          "name": "Jollof Rice", 
-          "category": "Main", 
-          "prep_time_mins": 60,
-          "price_min": 1500,
-          "price_max": 2500,
-          "dietary_tags": "",
-          "instructions": ""
-        },
-        "day_of_week": "Monday",
-        "meal_slot": "Breakfast"
-      }
-    ]
-  }
-}
-```
-
-### `POST /timetable/generate`
-Generates a new random timetable, deleting any existing active one.
-
-**Request:**
-```http
-POST /timetable/generate
-Authorization: Bearer <jwt_token>
-```
-
-**Success Response:**
-```json
-{
-  "success": true,
-  "message": "Timetable generated successfully",
-  "data": {
-    "id": "new-plan-uuid",
-    "status": "active",
-    "items": [
-      {
-        "id": "item-uuid",
-        "meal": { 
-          "name": "Jollof Rice", 
-          "category": "Main", 
-          "prep_time_mins": 60,
-          "price_min": 1500,
-          "price_max": 2500,
-          "dietary_tags": "",
-          "instructions": ""
-        },
-        "day_of_week": "Monday",
-        "meal_slot": "Breakfast"
-      }
-    ]
-  }
-}
-```
-
-> **Warning:** These routes are available for timetable generation but do not integrate with the budget statistics (`budgetStats`) provided by the `/api/meal-plans/` endpoints.
-
 ## Base URL
 
 Local development defaults to:
@@ -211,58 +138,17 @@ Request body:
 
 ---
 
+### `GET /auth/reset-password`
+
+Validates a password-reset token via query parameter and redirects to the frontend.
+
+---
+
 ### `POST /auth/reset-password`
 
-Resets the user's password using a valid reset token (from the email link).
+Consumes a password reset token and stores a new password hash.
 
-Request body:
-
-```json
-{
-  "token": "reset-token-from-email",
-  "newPassword": "new-password"
-}
-```
-
-  "email": "user@example.com",
-  "phone_number": "+2348000000000",
-  "password": "password"
-}
-```
-
-Success response:
-
-```json
-{
-  "success": true,
-  "message": "User registered successfully. Please check your email to verify your account.",
-  "data": {
-    "user": {
-      "id": "user-uuid",
-      "email": "user@example.com"
-    }
-  }
-}
-```
-
-Error responses:
-
-- `400` if any required field is missing.
-- `500` on server or database failure.
-
-### `GET /auth/verify-email`
-
-Verifies a user's email using the `token` query parameter. This route redirects to the frontend instead of returning JSON.
-
-Query parameters:
-
-- `token`
-
-Behavior:
-
-- On success: redirects to `${FRONTEND_URL}/sign-in?status=success&message=Email%20verified%20successfully&verified=true`
-- On invalid or expired token: redirects to `${FRONTEND_URL}/sign-in?status=error&message=Invalid%20or%20expired%20verification%20token&verified=false`
-- On missing token: redirects to `${FRONTEND_URL}/sign-in?status=error&message=Token%20is%20required&verified=false`
+---
 
 ### `POST /auth/login`
 
@@ -284,7 +170,20 @@ Success response:
   "success": true,
   "message": "User logged in successfully",
   "data": {
-    "token": "jwt-token"
+    "token": "jwt-token",
+    "user": {
+      "id": "user-uuid",
+      "email": "user@example.com",
+      "phone_number": "+2348000000000",
+      "isVerified": true,
+      "created_at": "2026-01-01T00:00:00.000Z",
+      "profile": {
+        "id": "profile-uuid",
+        "user_id": "user-uuid",
+        "full_name": "Example User",
+        "avatar_url": ""
+      }
+    }
   }
 }
 ```
@@ -391,6 +290,101 @@ Error responses:
 - `400` if the token is invalid or expired.
 - `500` on server failure.
 
+## Protected Auth Routes
+
+These routes require authentication and are mounted at `/auth` from [src/routes/auth.ts](/home/isaac/Documents/caya/Naija_Eats/backend/src/routes/auth.ts:1).
+
+### `GET /auth/me`
+
+Fetches the authenticated user's account details and profile.
+
+Success response:
+
+```json
+{
+  "success": true,
+  "message": "User profile retrieved successfully",
+  "data": {
+    "id": "user-uuid",
+    "email": "user@example.com",
+    "phone_number": "+2348000000000",
+    "isVerified": true,
+    "created_at": "2026-01-01T00:00:00.000Z",
+    "profile": {
+      "id": "profile-uuid",
+      "user_id": "user-uuid",
+      "full_name": "Example User",
+      "avatar_url": ""
+    }
+  }
+}
+```
+
+Error responses:
+
+- `404` if user is not found.
+- `500` on server failure.
+
+### `PUT /auth/profile`
+
+Updates the authenticated user's profile (full_name and avatar_url).
+
+Request body:
+
+```json
+{
+  "full_name": "New Name",
+  "avatar_url": "new-url"
+}
+```
+
+Success response:
+
+```json
+{
+  "success": true,
+  "message": "Profile updated successfully",
+  "data": {
+    "id": "profile-uuid",
+    "user_id": "user-uuid",
+    "full_name": "New Name",
+    "avatar_url": "new-url"
+  }
+}
+```
+
+Error responses:
+
+- `500` on server failure.
+
+### `POST /auth/change-password`
+
+Changes the authenticated user's password after verifying the old one.
+
+Request body:
+
+```json
+{
+  "oldPassword": "current-password",
+  "newPassword": "new-password123"
+}
+```
+
+Success response:
+
+```json
+{
+  "success": true,
+  "message": "Password updated successfully"
+}
+```
+
+Error responses:
+
+- `400` if `oldPassword` or `newPassword` is missing.
+- `401` if the old password is incorrect.
+- `500` on server failure.
+
 ## Protected Routes Mounted At `/profile`
 
 These routes come from [src/routes/profile.ts](/home/isaac/Documents/caya/Naija_Eats/backend/src/routes/profile.ts:1).
@@ -453,11 +447,11 @@ Success response:
 }
 ```
 
-## Protected Routes Mounted At `/`
+## Protected Routes Mounted At `/meals`
 
 These routes come from [src/routes/meals.ts](/home/isaac/Documents/caya/Naija_Eats/backend/src/routes/meals.ts:1).
 
-### `POST /preference`
+### `POST /meals/preference`
 
 Saves onboarding data in one transaction across `budgets`, `household_profiles`, `user_preferences`, and `user_allergies`.
 
@@ -486,7 +480,7 @@ Success response:
 }
 ```
 
-### `GET /meals`
+### `GET /meals/`
 
 Returns meals ordered alphabetically by name.
 
@@ -506,22 +500,30 @@ Success response:
 {
   "success": true,
   "message": "Meals retrieved successfully",
-  "data": [
-    {
-      "id": "meal-uuid",
-      "name": "Jollof Rice",
-      "category": "lunch",
-      "price_min": "1500",
-      "price_max": "2500",
-      "prep_time_mins": 45,
-      "dietary_tags": "spicy,popular",
-      "instructions": "Cook rice with tomato base."
+  "data": {
+    "meals": [
+      {
+        "id": "meal-uuid",
+        "name": "Jollof Rice",
+        "category": "lunch",
+        "price_min": "1500",
+        "price_max": "2500",
+        "prep_time_mins": 45,
+        "dietary_tags": "spicy,popular",
+        "instructions": ["Rinse and parboil rice until slightly tender.", "Blend tomatoes, peppers, and onions into a smooth puree.", "Sauté the tomato puree in hot oil until reduced.", "Season with salt, curry, thyme, and seasoning cubes.", "Add parboiled rice and stock. Cover and cook on low heat.", "Stir gently and serve hot with fried plantains or chicken."]
+      }
+    ],
+    "pagination": {
+      "page": 1,
+      "limit": 20,
+      "total": 1,
+      "totalPages": 1
     }
-  ]
+  }
 }
 ```
 
-### `POST /meals-plan/generate`
+### `POST /meals/meals-plan/generate`
 
 Creates a new active meal plan for the authenticated user.
 
@@ -564,7 +566,7 @@ Error responses:
 - `400` if `items` is missing or empty.
 - `500` on server failure.
 
-### `GET /meals-plan/:id`
+### `GET /meals/meals-plan/:id`
 
 Fetches a meal plan by ID for the current user.
 
@@ -826,7 +828,7 @@ Retrieves the active timetable for the authenticated user.
           "price_min": 1500,
           "price_max": 2500,
           "dietary_tags": "",
-          "instructions": ""
+          "instructions": ["Rinse and parboil rice until slightly tender.", "Blend tomatoes, peppers, and onions into a smooth puree.", "Sauté the tomato puree in hot oil until reduced.", "Season with salt, curry, thyme, and seasoning cubes.", "Add parboiled rice and stock. Cover and cook on low heat.", "Stir gently and serve hot with fried plantains or chicken."]
         },
         "day_of_week": "Monday",
         "meal_slot": "Breakfast"
@@ -863,7 +865,7 @@ Authorization: Bearer <jwt_token>
           "price_min": 1500,
           "price_max": 2500,
           "dietary_tags": "",
-          "instructions": ""
+          "instructions": ["Rinse and parboil rice until slightly tender.", "Blend tomatoes, peppers, and onions into a smooth puree.", "Sauté the tomato puree in hot oil until reduced.", "Season with salt, curry, thyme, and seasoning cubes.", "Add parboiled rice and stock. Cover and cook on low heat.", "Stir gently and serve hot with fried plantains or chicken."]
         },
         "day_of_week": "Monday",
         "meal_slot": "Breakfast"
@@ -873,4 +875,81 @@ Authorization: Bearer <jwt_token>
 }
 ```
 
+### `PUT /timetable/items/:itemId`
+
+Swaps a single meal in the active timetable with a new one. Validates that the swap stays within budget.
+
+**Request:**
+```http
+PUT /timetable/items/:itemId
+Authorization: Bearer <jwt_token>
+Content-Type: application/json
+```
+
+```json
+{
+  "mealId": "new-meal-uuid"
+}
+```
+
+**Success Response:**
+```json
+{
+  "success": true,
+  "message": "\"New Meal\" swapped in successfully",
+  "data": {
+    "id": "plan-uuid",
+    "status": "active",
+    "items": [
+      {
+        "id": "item-uuid",
+        "meal": { "name": "New Meal" },
+        "day_of_week": "Monday",
+        "meal_slot": "Breakfast"
+      }
+    ]
+  }
+}
+```
+
+Error responses:
+
+- `400` if `mealId` is missing or the swap exceeds budget.
+- `404` if no active timetable or item is found.
+
 > **Warning:** These routes are available for timetable generation but do not integrate with the budget statistics (`budgetStats`) provided by the `/api/meal-plans/` endpoints.
+
+## Admin Routes
+
+These routes require authentication and admin role, mounted at `/admin` from [src/routes/admin.ts](/home/isaac/Documents/caya/Naija_Eats/backend/src/routes/admin.ts:1).
+
+### `PUT /admin/meals/:id/image`
+
+Uploads an image for a meal. Accepts a multipart form with an `image` field. The image is uploaded to Cloudinary and the resulting URL is stored on the meal record.
+
+**Request:**
+```http
+PUT /admin/meals/:id/image
+Authorization: Bearer <admin_jwt_token>
+Content-Type: multipart/form-data
+```
+
+Form field: `image` (file, max 5 MB, images only)
+
+Success response:
+
+```json
+{
+  "success": true,
+  "message": "Image uploaded successfully",
+  "data": {
+    "image_url": "https://res.cloudinary.com/..."
+  }
+}
+```
+
+Error responses:
+
+- `400` if no image file is provided.
+- `404` if the meal is not found.
+- `500` on upload failure.

@@ -1,5 +1,6 @@
 import { prisma } from "../config/prisma";
 import { PrismaClient } from "@prisma/client";
+import { safeParseInstructions } from "../utils/helper";
 
 type PrismaTx = Omit<PrismaClient, "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends">;
 
@@ -73,6 +74,7 @@ export function formatPlan(plan: any) {
       price_at_time: item.price_at_time ? Number(item.price_at_time) : null,
       meal: {
         ...item.meal,
+        instructions: item.meal.instructions ? safeParseInstructions(item.meal.instructions) : null,
         price_min: item.meal.price_min ? Number(item.meal.price_min) : null,
         price_max: item.meal.price_max ? Number(item.meal.price_max) : null,
       },

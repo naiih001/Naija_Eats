@@ -5,7 +5,9 @@
   "private": true,
   "scripts": {
     "dev": "bun --watch src/server.ts",
-    "start": "bun src/server.ts"
+    "start": "bun src/server.ts",
+    "upload-images": "npx tsx scripts/upload-images.ts",
+    "match-images": "npx tsx scripts/match-images.ts"
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",

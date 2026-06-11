@@ -6,7 +6,7 @@ This backend runs on Bun with Express, Prisma, and PostgreSQL.
 
 - Bun installed locally
 - A PostgreSQL database
-- A Resend API key for email delivery in auth flows
+- EmailJS credentials (service ID, template IDs, public/private keys) for transactional emails
 
 ## Installation
 
@@ -27,20 +27,26 @@ Set these variables:
 ```env
 DATABASE_URL="postgresql://user:password@localhost:5432/naija_eats"
 JWT_SECRET="your-secure-jwt-secret"
-RESEND_API_KEY="re_your_api_key"
 FRONTEND_URL="http://localhost:5173"
 BACKEND_URL="http://localhost:3000"
 PORT=3000
 NODE_ENV=development
+EMAILJS_SERVICE_ID="service_t4xoffb"
+EMAILJS_PUBLIC_KEY="your_emailjs_public_key"
+EMAILJS_PRIVATE_KEY="your_emailjs_private_key"
+CLOUDINARY_CLOUD_NAME="your_cloud_name"
+CLOUDINARY_API_KEY="your_cloudinary_api_key"
+CLOUDINARY_API_SECRET="your_cloudinary_api_secret"
 ```
 
 Variable notes:
 
 - `DATABASE_URL`: PostgreSQL connection string used by Prisma.
 - `JWT_SECRET`: secret used to sign and verify auth tokens.
-- `RESEND_API_KEY`: required for registration verification and password-reset emails.
 - `FRONTEND_URL`: base URL used for redirects after email verification and reset-token validation.
 - `BACKEND_URL`: base URL used inside email links.
+- `EMAILJS_SERVICE_ID`, `EMAILJS_PUBLIC_KEY`, `EMAILJS_PRIVATE_KEY`: used by EmailJS for sending verification and password-reset emails.
+- `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`: used for admin meal image uploads.
 
 ## Database Setup
 
@@ -58,13 +64,13 @@ bun x prisma generate
 
 The data model in [prisma/schema.prisma](/home/isaac/Documents/caya/Naija_Eats/backend/prisma/schema.prisma:1) includes:
 
-- `User` and `Profile`
+- `User` (with `role` field: `"user"` or `"admin"`) and `Profile`
 - `budgets`
 - `household_profiles`
 - `user_preferences`
 - `user_allergies`
 - `dietary_tags`
-- `meals`
+- `meals` (with `ingredients` JSON field, `cuisine`, `image_url`)
 - `meal_plans`
 - `meal_plan_items`
 - `shopping_list_items`
@@ -104,12 +110,15 @@ Authorization: Bearer <jwt_token>
 
 ## Route Groups
 
-- `/auth`: registration, email verification, login, resend verification, forgot password, password reset
-- `/`: protected preference, meals, and meal-plan routes from `src/routes/meals.ts`
-- `/api`: protected onboarding and alternate meal-plan routes from `src/routes/onboarding.ts`
+- `/auth`: registration, email verification, login, resend verification, forgot password, password reset, and protected routes (get/update profile, change password)
+- `/meals`: protected preference, meals, and meal-plan routes from `src/routes/meals.ts`
+- `/timetable`: protected timetable generate and swap routes from `src/routes/timetable.ts`
+- `/api`: protected onboarding and meal-plan routes from `src/routes/onboarding.ts`
+- `/profile`: protected user profile CRUD from `src/routes/profile.ts`
+- `/admin`: protected admin-only routes (meal image upload) from `src/routes/admin.ts`
 
 ## Behavioral Notes
 
 - Email verification is required before login succeeds.
-- Some route families overlap in purpose. For example, both `POST /preference` and the `/api/users/preferences/*` routes write onboarding-related data.
+- Some route families overlap in purpose. For example, both `POST /meals/preference` and the `/api/users/preferences/*` routes write onboarding-related data.
 - Some meal-plan endpoints are partial implementations today and return limited data. See [docs/api.md](/home/isaac/Documents/caya/Naija_Eats/backend/docs/api.md:1) for the exact current behavior.
