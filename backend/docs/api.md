@@ -510,7 +510,7 @@ Success response:
         "price_max": "2500",
         "prep_time_mins": 45,
         "dietary_tags": "spicy,popular",
-        "instructions": "Cook rice with tomato base."
+        "instructions": ["Rinse and parboil rice until slightly tender.", "Blend tomatoes, peppers, and onions into a smooth puree.", "Sauté the tomato puree in hot oil until reduced.", "Season with salt, curry, thyme, and seasoning cubes.", "Add parboiled rice and stock. Cover and cook on low heat.", "Stir gently and serve hot with fried plantains or chicken."]
       }
     ],
     "pagination": {
@@ -828,7 +828,7 @@ Retrieves the active timetable for the authenticated user.
           "price_min": 1500,
           "price_max": 2500,
           "dietary_tags": "",
-          "instructions": ""
+          "instructions": ["Rinse and parboil rice until slightly tender.", "Blend tomatoes, peppers, and onions into a smooth puree.", "Sauté the tomato puree in hot oil until reduced.", "Season with salt, curry, thyme, and seasoning cubes.", "Add parboiled rice and stock. Cover and cook on low heat.", "Stir gently and serve hot with fried plantains or chicken."]
         },
         "day_of_week": "Monday",
         "meal_slot": "Breakfast"
@@ -865,7 +865,7 @@ Authorization: Bearer <jwt_token>
           "price_min": 1500,
           "price_max": 2500,
           "dietary_tags": "",
-          "instructions": ""
+          "instructions": ["Rinse and parboil rice until slightly tender.", "Blend tomatoes, peppers, and onions into a smooth puree.", "Sauté the tomato puree in hot oil until reduced.", "Season with salt, curry, thyme, and seasoning cubes.", "Add parboiled rice and stock. Cover and cook on low heat.", "Stir gently and serve hot with fried plantains or chicken."]
         },
         "day_of_week": "Monday",
         "meal_slot": "Breakfast"
